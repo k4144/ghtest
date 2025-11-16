@@ -7,15 +7,31 @@
 import ast
 import os
 import sys
-import importlib
-import io
 import textwrap
-from contextlib import redirect_stdout
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Optional
-
+from typing import Any, Callable, Dict, List, Optional, Sequence
 
 import vcr
+
+try:  # pragma: no cover - fallback for direct script usage
+    from .test_utils import (
+        CaseTestResult,
+        RunTestWithCassette,
+        call_with_capture,
+        execute_function,
+        import_function,
+    )
+except ImportError:  # pragma: no cover
+    current_dir = os.path.dirname(__file__)
+    if current_dir not in sys.path:
+        sys.path.insert(0, current_dir)
+    from test_utils import (  # type: ignore
+        CaseTestResult,
+        RunTestWithCassette,
+        call_with_capture,
+        execute_function,
+        import_function,
+    )
 
 
 # In[5]:
@@ -51,21 +67,8 @@ class SuggestedFunctionTests:
 
 
 @dataclass
-class TestCaseResult:
-    target: str
-    params: Dict[str, Any]
-    return_value: Any
-    printed: str
-    exception: Optional[BaseException]
-
-@dataclass
-class TestRunWithCassette:
-    cassette_path: str
-    cases: List[TestCaseResult]
-
-@dataclass
 class GeneratedTest:
-    test_callable: Callable[[], TestRunWithCassette]
+    test_callable: Callable[[], RunTestWithCassette]
     cassette_path: str
     source: str        # Python source code of an equivalent test function
 
@@ -224,37 +227,20 @@ def _confirm_crud_scenario(scenario: CrudScenario) -> None:
         raise RuntimeError("Aborted CRUD scenario execution.")
 
 
-def _execute_function_call(module: str, filepath: str, qualname: str, params: Dict[str, Any]) -> Any:
-    func = _import_function(module, filepath, qualname)
-    return func(**params)
-
-
-def _execute_scenario_step(step: ScenarioStep, record: bool = True) -> TestCaseResult:
-    buf = io.StringIO()
-    with redirect_stdout(buf):
-        try:
-            ret = _execute_function_call(step.module, step.filepath, step.qualname, dict(step.params))
-            exc: Optional[BaseException] = None
-        except BaseException as e:  # noqa: BLE001
-            ret = None
-            exc = e
-    printed = buf.getvalue()
+def _execute_scenario_step(step: ScenarioStep, record: bool = True) -> CaseTestResult:
+    result = execute_function(step.module, step.filepath, step.qualname, dict(step.params))
+    ret = result.return_value
+    exc = result.exception
     if step.expect == "truthy" and not ret and exc is None:
         raise AssertionError(f"Expected truthy result for {step.qualname}, got {ret!r}")
     if step.expect == "falsy" and ret and exc is None:
         raise AssertionError(f"Expected falsy result for {step.qualname}, got {ret!r}")
-    return TestCaseResult(
-        target=step.qualname,
-        params=step.params,
-        return_value=ret,
-        printed=printed,
-        exception=exc,
-    )
+    return result
 
 
-def _run_crud_scenario(scenario: CrudScenario) -> List[TestCaseResult]:
+def _run_crud_scenario(scenario: CrudScenario) -> List[CaseTestResult]:
     _confirm_crud_scenario(scenario)
-    results: List[TestCaseResult] = []
+    results: List[CaseTestResult] = []
     cleanup_step = next((s for s in scenario.steps if s.cleanup), None)
     cleanup_executed = False
     pending_error: Optional[BaseException] = None
@@ -280,154 +266,73 @@ def _run_crud_scenario(scenario: CrudScenario) -> List[TestCaseResult]:
     return results
 
 
-def _import_module_from_path(path: str, module_name: str = None) -> 'ModuleType':
-    """
-    Import a Python module directly from its file path.
-    Returns the loaded module object.
-    """
-    if module_name is None:
-        # Generate a unique name from the filename
-        import os, uuid
-        base = os.path.splitext(os.path.basename(path))[0]
-        module_name = f"{base}_{uuid.uuid4().hex}"
-
-    spec = importlib.util.spec_from_file_location(module_name, path)
-    if spec is None or spec.loader is None:
-        raise ImportError(f"Cannot import module from {path}")
-
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[module_name] = module
-    spec.loader.exec_module(module)
-    return module
-
-def _import_function(module: str, filepath: str, qualname: str) -> Callable[..., Any]:
-    try:
-        mod = importlib.import_module(module)
-    except Exception as e:
-        mod=_import_module_from_path(filepath)
-    obj: Any = mod
-    for part in qualname.split("."):
-        obj = getattr(obj, part)    
-    return obj
-
-
-# In[ ]:
-
-
 def make_test_function(
     suggestion: SuggestedFunctionTests,
     cassette_dir: str,
     record_mode: str = "once",
+    volatile_response_fields: Optional[Sequence[str]] = None,
 ) -> GeneratedTest:
     os.makedirs(cassette_dir, exist_ok=True)
 
     func_name = f"test_{suggestion.qualname.replace('.', '_')}"
     cassette_name = f"{suggestion.module}.{suggestion.qualname}.yaml".replace(":", "_")
     cassette_path = os.path.join(cassette_dir, cassette_name)
+    if volatile_response_fields is None:
+        volatile_fields: Optional[List[str]] = None
+    else:
+        volatile_fields = list(volatile_response_fields)
 
     vcr_recorder = vcr.VCR(
-        serializer="yaml",
+        serializer='yaml',
         cassette_library_dir=cassette_dir,
         record_mode=record_mode,
-        match_on=["uri", "method"],
+        match_on=['uri', 'method', 'body'], # include body because data payload may differ
     )
 
-    def test() -> TestRunWithCassette:
+
+    def test() -> RunTestWithCassette:
         if _should_confirm_execution(suggestion):
             _prompt_user_confirmation(suggestion)
-        func = _import_function(suggestion.module, suggestion.filepath, suggestion.qualname)
-        results: List[TestCaseResult] = []
+        func = import_function(suggestion.module, suggestion.filepath, suggestion.qualname)
+        results: List[CaseTestResult] = []
 
         with vcr_recorder.use_cassette(cassette_name):
             for params in suggestion.param_sets:
-                buf = io.StringIO()
-                with redirect_stdout(buf):
-                    try:
-                        ret = func(**params)
-                        exc: Optional[BaseException] = None
-                    except BaseException as e:
-                        ret = None
-                        exc = e
-                results.append(
-                    TestCaseResult(
-                        target=suggestion.qualname,
-                        params=params,
-                        return_value=ret,
-                        printed=buf.getvalue(),
-                        exception=exc,
-                    )
+                result = call_with_capture(
+                    func,
+                    target=suggestion.qualname,
+                    params=dict(params),
+                    volatile_return_fields=volatile_fields,
                 )
+                results.append(result)
             if suggestion.scenario:
                 scenario_results = _run_crud_scenario(suggestion.scenario)
                 results.extend(scenario_results)
 
-        return TestRunWithCassette(cassette_path=cassette_path, cases=results)
+        return RunTestWithCassette(cassette_path=cassette_path, cases=results)
 
     test.__name__ = func_name
     if suggestion.docstring:
         test.__doc__ = f"Auto-generated test for {suggestion.qualname} with VCR.\n\n{suggestion.docstring}"
 
     param_sets_repr = repr(suggestion.param_sets)
+    volatile_repr = repr(volatile_fields)
 
     source = textwrap.dedent(
-        f'''import importlib
-import io
-import os
-from contextlib import redirect_stdout
-from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Callable
+        f'''import os
+from typing import List
 
 import vcr
 
-
-@dataclass
-class TestCaseResult:
-    target: str
-    params: Dict[str, Any]
-    return_value: Any
-    printed: str
-    exception: Optional[BaseException]
+from ghtest.test_utils import (
+    CaseTestResult,
+    RunTestWithCassette,
+    call_with_capture,
+    import_function,
+)
 
 
-@dataclass
-class TestRunWithCassette:
-    cassette_path: str
-    cases: List[TestCaseResult]
-
-
-def _import_module_from_path(path: str, module_name: str = None) -> 'ModuleType':
-    """
-    Import a Python module directly from its file path.
-    Returns the loaded module object.
-    """
-    if module_name is None:
-        # Generate a unique name from the filename
-        import os, uuid
-        base = os.path.splitext(os.path.basename(path))[0]
-        module_name = f"{{base}}_{{uuid.uuid4().hex}}"
-
-    spec = importlib.util.spec_from_file_location(module_name, path)
-    if spec is None or spec.loader is None:
-        raise ImportError(f"cannot import module from {{path}}")
-
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[module_name] = module
-    spec.loader.exec_module(module)
-    return module
-
-    
-def _import_function(module: str, filepath: str, qualname: str) -> Callable[..., Any]:
-    try:
-        mod = importlib.import_module(module)
-    except Exception as e:
-        mod=_import_module_from_path(filepath)
-    obj: Any = mod
-    for part in qualname.split("."):
-        obj = getattr(obj, part)    
-    return obj
-
-
-def {func_name}() -> TestRunWithCassette:
+def {func_name}() -> RunTestWithCassette:
     module = {suggestion.module!r}
     filepath = {suggestion.filepath!r}
     qualname = {suggestion.qualname!r}
@@ -435,6 +340,7 @@ def {func_name}() -> TestRunWithCassette:
     cassette_name = {cassette_name!r}
     cassette_path = os.path.join(cassette_dir, cassette_name)
     param_sets = {param_sets_repr}
+    volatile_fields = {volatile_repr}
 
     os.makedirs(cassette_dir, exist_ok=True)
 
@@ -445,30 +351,15 @@ def {func_name}() -> TestRunWithCassette:
         match_on=["uri", "method"],
     )
 
-    func = _import_function(module, filepath, qualname)
-    results: List[TestCaseResult] = []
+    func = import_function(module, filepath, qualname)
+    results: List[CaseTestResult] = []
 
     with vcr_recorder.use_cassette(cassette_name):
         for params in param_sets:
-            buf = io.StringIO()
-            with redirect_stdout(buf):
-                try:
-                    ret = func(**params)
-                    exc: Optional[BaseException] = None
-                except BaseException as e:
-                    ret = None
-                    exc = e
-            results.append(
-                TestCaseResult(
-                    target=qualname,
-                    params=params,
-                    return_value=ret,
-                    printed=buf.getvalue(),
-                    exception=exc,
-                )
-            )
+            result = call_with_capture(func, target=qualname, params=params, volatile_return_fields=volatile_fields)
+            results.append(result)
 
-    return TestRunWithCassette(cassette_path=cassette_path, cases=results)
+    return RunTestWithCassette(cassette_path=cassette_path, cases=results)
         '''
     )
 

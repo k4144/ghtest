@@ -5,6 +5,18 @@ build/
 dist/
 wheels/
 *.egg-info
+nohup.out
 
 # Virtual environments
 .venv
+
+# checkpoints
+.ipynb_checkpoints
+
+# os specific
+.DS_Store
+
+# test data
+testdata
+testdata_tests
+tests/cassettes/*

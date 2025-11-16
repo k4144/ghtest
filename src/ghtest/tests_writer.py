@@ -6,18 +6,19 @@ from __future__ import annotations
 import os
 import pprint
 import textwrap
+import vcr
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from .tests_creator import CrudScenario, ScenarioStep, SuggestedFunctionTests
-from .test_utils import TestCaseResult, TestRunWithCassette
+from .test_utils import CaseTestResult, RunTestWithCassette, assert_return_summary
 
 
 @dataclass
 class TestArtifact:
     suggestion: SuggestedFunctionTests
-    run: TestRunWithCassette
+    run: RunTestWithCassette
 
 
 @dataclass
@@ -29,7 +30,7 @@ class TestWriterResult:
 @dataclass
 class ScenarioDefinition:
     suggestion: SuggestedFunctionTests
-    cases: List[Tuple[ScenarioStep, TestCaseResult]]
+    cases: List[Tuple[ScenarioStep, CaseTestResult]]
 
 
 class _DataStore:
@@ -133,8 +134,8 @@ def _cleanup_empty_data_dir(data_dir: Path) -> None:
 
 def _collect_cases(
     artifacts: Sequence[TestArtifact],
-) -> Tuple[List[Tuple[SuggestedFunctionTests, TestCaseResult, int]], List[ScenarioDefinition]]:
-    collected: List[Tuple[SuggestedFunctionTests, TestCaseResult, int]] = []
+) -> Tuple[List[Tuple[SuggestedFunctionTests, CaseTestResult, int]], List[ScenarioDefinition]]:
+    collected: List[Tuple[SuggestedFunctionTests, CaseTestResult, int]] = []
     scenarios: List[ScenarioDefinition] = []
 
     for artifact in artifacts:
@@ -143,7 +144,7 @@ def _collect_cases(
 
         scenario = suggestion.scenario
         scenario_case_count = len(scenario.steps) if scenario else 0
-        scenario_cases: List[TestCaseResult] = []
+        scenario_cases: List[CaseTestResult] = []
         if scenario and scenario_case_count and len(run_cases) >= scenario_case_count:
             scenario_cases = run_cases[-scenario_case_count:]
             run_cases = run_cases[:-scenario_case_count]
@@ -160,7 +161,7 @@ def _collect_cases(
 
 
 def _render_test_function(
-    item: Tuple[SuggestedFunctionTests, TestCaseResult, int],
+    item: Tuple[SuggestedFunctionTests, CaseTestResult, int],
     data_store: _DataStore,
 ) -> str:
     suggestion, case, case_idx = item
@@ -170,13 +171,33 @@ def _render_test_function(
     lines.append(f"    func = import_function({suggestion.module!r}, {suggestion.filepath!r}, {suggestion.qualname!r})")
     params_literal = _format_literal(case.params)
     lines.append(_format_assignment("params", params_literal))
-    lines.append("    result = call_with_capture(func, target={qual!r}, params=params)".format(qual=suggestion.qualname))
+    volatile_literal = _format_literal(case.volatile_return_fields)
+    lines.append(_format_assignment("volatile_fields", volatile_literal))
+    cassette_path = getattr(case, "cassette_path", None)
+    if cassette_path:
+        lines.append(f"    cassette_path = {cassette_path!r}")
+        lines.append("    vcr_recorder = vcr.VCR(serializer='yaml', match_on=['uri', 'method', 'body'], record_mode='none')")
+        lines.append("    with vcr_recorder.use_cassette(cassette_path):")
+        lines.append(
+            "        result = call_with_capture(func, target={qual!r}, params=params, volatile_return_fields=volatile_fields)".format(
+                qual=suggestion.qualname
+            )
+        )
+    else:
+        lines.append(
+            "    result = call_with_capture(func, target={qual!r}, params=params, volatile_return_fields=volatile_fields)".format(
+                qual=suggestion.qualname
+            )
+        )
 
     if case.exception is None:
         lines.append("    assert result.exception is None")
-        return_literal = data_store.literal(case.return_value, label=f"{func_name}_return")
+        return_literal, is_repr = _literal_or_repr(case.return_value, data_store, f"{func_name}_return")
         lines.append(_format_assignment("expected_return", return_literal))
-        lines.append("    assert result.return_value == expected_return")
+        if is_repr:
+            lines.append("    assert repr(result.return_value) == expected_return")
+        else:
+            lines.append("    assert result.return_value == expected_return")
     else:
         exc_type = f"{case.exception.__class__.__module__}.{case.exception.__class__.__name__}"
         message = str(case.exception)
@@ -184,9 +205,23 @@ def _render_test_function(
         lines.append(f"    assert result.exception.__class__.__module__ + '.' + result.exception.__class__.__name__ == {exc_type!r}")
         lines.append(f"    assert str(result.exception) == {message!r}")
 
-    printed_literal = data_store.literal(case.printed, label=f"{func_name}_stdout")
+    printed_literal, printed_repr = _literal_or_repr(case.printed, data_store, f"{func_name}_stdout")
     lines.append(_format_assignment("expected_output", printed_literal))
-    lines.append("    assert result.printed == expected_output")
+    if printed_repr:
+        lines.append("    assert repr(result.printed) == expected_output")
+    else:
+        lines.append("    assert result.printed == expected_output")
+    reads_literal = data_store.literal(case.file_reads, label=f"{func_name}_reads")
+    lines.append(_format_assignment("expected_reads", reads_literal))
+    lines.append("    assert result.file_reads == expected_reads")
+    writes_literal = data_store.literal(case.file_writes, label=f"{func_name}_writes")
+    lines.append(_format_assignment("expected_writes", writes_literal))
+    lines.append("    assert result.file_writes == expected_writes")
+    summary_literal = data_store.literal(case.return_summary, label=f"{func_name}_return_summary")
+    lines.append(_format_assignment("expected_return_summary", summary_literal))
+    lines.append(
+        f"    assert_return_summary(result.return_summary, expected_return_summary, target={suggestion.qualname!r})"
+    )
     return "\n".join(lines) + "\n"
 
 
@@ -199,7 +234,10 @@ def _write_module(
 ) -> Path:
     module_name = f"test_generated_{module_index}"
     module_path = output_dir / f"{module_name}.py"
-    header_lines = ["from ghtest.test_utils import call_with_capture, import_function"]
+    header_lines = [
+        "import vcr",
+        "from ghtest.test_utils import assert_return_summary, call_with_capture, import_function",
+    ]
     header = "\n".join(header_lines).rstrip() + "\n\n"
     if data_loader:
         header += "\n".join(_DATA_LOADER_TEMPLATE).rstrip() + "\n\n"
@@ -244,8 +282,9 @@ def _write_scenario_module(
     header = textwrap.dedent(
         """\
         import os
+        import vcr
 
-        from ghtest.test_utils import call_with_capture, import_function
+        from ghtest.test_utils import assert_return_summary, call_with_capture, import_function
 
         _SCENARIO_ENV = "GHTEST_RUN_SCENARIOS"
         """
@@ -286,13 +325,37 @@ def _render_scenario_function(
         lines.append(f"    func = import_function({step.module!r}, {step.filepath!r}, {step.qualname!r})")
         params_literal = _format_literal(step.params)
         lines.append(_format_assignment("params", params_literal))
-        lines.append("    result = call_with_capture(func, target={qual!r}, params=params)".format(qual=step.qualname))
+        volatile_literal = _format_literal(case.volatile_return_fields)
+        lines.append(_format_assignment("volatile_fields", volatile_literal))
+        cassette_path = getattr(case, "cassette_path", None)
+        if cassette_path:
+            lines.append(f"    cassette_path = {cassette_path!r}")
+            lines.append("    vcr_recorder = vcr.VCR(serializer='yaml', match_on=['uri', 'method', 'body'], record_mode='none')")
+            lines.append("    with vcr_recorder.use_cassette(cassette_path):")
+            lines.append(
+                "        result = call_with_capture(func, target={qual!r}, params=params, volatile_return_fields=volatile_fields)".format(
+                    qual=step.qualname
+                )
+            )
+        else:
+            lines.append(
+                "    result = call_with_capture(func, target={qual!r}, params=params, volatile_return_fields=volatile_fields)".format(
+                    qual=step.qualname
+                )
+            )
 
         if case.exception is None:
             lines.append("    assert result.exception is None")
-            return_literal = data_store.literal(case.return_value, label=f"{func_name}_step_{idx}_return")
+            return_literal, return_repr = _literal_or_repr(
+                case.return_value,
+                data_store,
+                f"{func_name}_step_{idx}_return",
+            )
             lines.append(_format_assignment("expected_return", return_literal))
-            lines.append("    assert result.return_value == expected_return")
+            if return_repr:
+                lines.append("    assert repr(result.return_value) == expected_return")
+            else:
+                lines.append("    assert result.return_value == expected_return")
         else:
             exc_type = f"{case.exception.__class__.__module__}.{case.exception.__class__.__name__}"
             message = str(case.exception)
@@ -300,9 +363,27 @@ def _render_scenario_function(
             lines.append(f"    assert result.exception.__class__.__module__ + '.' + result.exception.__class__.__name__ == {exc_type!r}")
             lines.append(f"    assert str(result.exception) == {message!r}")
 
-        printed_literal = data_store.literal(case.printed, label=f"{func_name}_step_{idx}_stdout")
+        printed_literal, printed_repr = _literal_or_repr(
+            case.printed,
+            data_store,
+            f"{func_name}_step_{idx}_stdout",
+        )
         lines.append(_format_assignment("expected_output", printed_literal))
-        lines.append("    assert result.printed == expected_output")
+        if printed_repr:
+            lines.append("    assert repr(result.printed) == expected_output")
+        else:
+            lines.append("    assert result.printed == expected_output")
+        reads_literal = data_store.literal(case.file_reads, label=f"{func_name}_step_{idx}_reads")
+        lines.append(_format_assignment("expected_reads", reads_literal))
+        lines.append("    assert result.file_reads == expected_reads")
+        writes_literal = data_store.literal(case.file_writes, label=f"{func_name}_step_{idx}_writes")
+        lines.append(_format_assignment("expected_writes", writes_literal))
+        lines.append("    assert result.file_writes == expected_writes")
+        summary_literal = data_store.literal(case.return_summary, label=f"{func_name}_step_{idx}_return_summary")
+        lines.append(_format_assignment("expected_return_summary", summary_literal))
+        lines.append(
+            f"    assert_return_summary(result.return_summary, expected_return_summary, target={step.qualname!r})"
+        )
 
     return "\n".join(lines) + "\n"
 
@@ -327,6 +408,24 @@ def _format_assignment(name: str, literal: str) -> str:
     formatted = [f"    {name} = {lines[0]}"]
     formatted.extend(f"    {line}" for line in lines[1:])
     return "\n".join(formatted)
+
+
+def _literal_or_repr(value: Any, data_store: _DataStore, label: str) -> Tuple[str, bool]:
+    if _is_literal_value(value):
+        return data_store.literal(value, label=label), False
+    return data_store.literal(repr(value), label=label), True
+
+
+def _is_literal_value(value: Any) -> bool:
+    if value is None:
+        return True
+    if isinstance(value, (bool, int, float, str)):
+        return True
+    if isinstance(value, (list, tuple)):
+        return all(_is_literal_value(v) for v in value)
+    if isinstance(value, dict):
+        return all(isinstance(k, str) and _is_literal_value(v) for k, v in value.items())
+    return False
 
 
 _DATA_LOADER_TEMPLATE = [

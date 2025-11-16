@@ -9,14 +9,14 @@ import os
 import sys
 import textwrap
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Sequence
 
 import vcr
 
 try:  # pragma: no cover - fallback for direct script usage
     from .test_utils import (
-        TestCaseResult,
-        TestRunWithCassette,
+        CaseTestResult,
+        RunTestWithCassette,
         call_with_capture,
         execute_function,
         import_function,
@@ -26,8 +26,8 @@ except ImportError:  # pragma: no cover
     if current_dir not in sys.path:
         sys.path.insert(0, current_dir)
     from test_utils import (  # type: ignore
-        TestCaseResult,
-        TestRunWithCassette,
+        CaseTestResult,
+        RunTestWithCassette,
         call_with_capture,
         execute_function,
         import_function,
@@ -68,9 +68,19 @@ class SuggestedFunctionTests:
 
 @dataclass
 class GeneratedTest:
-    test_callable: Callable[[], TestRunWithCassette]
+    test_callable: Callable[[], RunTestWithCassette]
     cassette_path: str
     source: str        # Python source code of an equivalent test function
+
+
+# Headers carrying authentication secrets; strip them from recorded cassettes.
+_SENSITIVE_CASSETTE_HEADERS = (
+    "authorization",
+    "proxy-authorization",
+    "x-api-key",
+    "x-auth-token",
+    "x-github-otp",
+)
 
 
 _DESTRUCTIVE_NAME_HINTS = (
@@ -227,7 +237,7 @@ def _confirm_crud_scenario(scenario: CrudScenario) -> None:
         raise RuntimeError("Aborted CRUD scenario execution.")
 
 
-def _execute_scenario_step(step: ScenarioStep, record: bool = True) -> TestCaseResult:
+def _execute_scenario_step(step: ScenarioStep, record: bool = True) -> CaseTestResult:
     result = execute_function(step.module, step.filepath, step.qualname, dict(step.params))
     ret = result.return_value
     exc = result.exception
@@ -238,9 +248,9 @@ def _execute_scenario_step(step: ScenarioStep, record: bool = True) -> TestCaseR
     return result
 
 
-def _run_crud_scenario(scenario: CrudScenario) -> List[TestCaseResult]:
+def _run_crud_scenario(scenario: CrudScenario) -> List[CaseTestResult]:
     _confirm_crud_scenario(scenario)
-    results: List[TestCaseResult] = []
+    results: List[CaseTestResult] = []
     cleanup_step = next((s for s in scenario.steps if s.cleanup), None)
     cleanup_executed = False
     pending_error: Optional[BaseException] = None
@@ -270,41 +280,58 @@ def make_test_function(
     suggestion: SuggestedFunctionTests,
     cassette_dir: str,
     record_mode: str = "once",
+    volatile_response_fields: Optional[Sequence[str]] = None,
 ) -> GeneratedTest:
     os.makedirs(cassette_dir, exist_ok=True)
 
     func_name = f"test_{suggestion.qualname.replace('.', '_')}"
-    cassette_name = f"{suggestion.module}.{suggestion.qualname}.yaml".replace(":", "_")
-    cassette_path = os.path.join(cassette_dir, cassette_name)
+    cassette_base = f"{suggestion.module}.{suggestion.qualname}".replace(":", "_")
+    cassette_path = os.path.join(cassette_dir, f"{cassette_base}.yaml")
+    if volatile_response_fields is None:
+        volatile_fields: Optional[List[str]] = None
+    else:
+        volatile_fields = list(volatile_response_fields)
 
-    vcr_recorder = vcr.VCR(
-        serializer="yaml",
-        cassette_library_dir=cassette_dir,
-        record_mode=record_mode,
-        match_on=["uri", "method"],
-    )
-
-    def test() -> TestRunWithCassette:
+    def test() -> RunTestWithCassette:
         if _should_confirm_execution(suggestion):
             _prompt_user_confirmation(suggestion)
         func = import_function(suggestion.module, suggestion.filepath, suggestion.qualname)
-        results: List[TestCaseResult] = []
+        results: List[CaseTestResult] = []
 
-        with vcr_recorder.use_cassette(cassette_name):
-            for params in suggestion.param_sets:
-                result = call_with_capture(func, target=suggestion.qualname, params=dict(params))
-                results.append(result)
-            if suggestion.scenario:
-                scenario_results = _run_crud_scenario(suggestion.scenario)
-                results.extend(scenario_results)
+        for idx, params in enumerate(suggestion.param_sets):
+            case_cassette = f"{cassette_base}.case_{idx}.yaml"
+            recorder = vcr.VCR(
+                serializer="yaml",
+                cassette_library_dir=cassette_dir,
+                record_mode=record_mode,
+                match_on=["uri", "method", "body"],
+                filter_headers=list(_SENSITIVE_CASSETTE_HEADERS),
+            )
+            with recorder.use_cassette(case_cassette):
+                result = call_with_capture(
+                    func,
+                    target=suggestion.qualname,
+                    params=dict(params),
+                    volatile_return_fields=volatile_fields,
+                )
+            result.cassette_path = os.path.join(cassette_dir, case_cassette)
+            results.append(result)
 
-        return TestRunWithCassette(cassette_path=cassette_path, cases=results)
+        if suggestion.scenario:
+            scenario_results = _run_crud_scenario(suggestion.scenario)
+            results.extend(scenario_results)
+
+        return RunTestWithCassette(
+            cassette_path=cassette_path,
+            cases=results,
+        )
 
     test.__name__ = func_name
     if suggestion.docstring:
         test.__doc__ = f"Auto-generated test for {suggestion.qualname} with VCR.\n\n{suggestion.docstring}"
 
     param_sets_repr = repr(suggestion.param_sets)
+    volatile_repr = repr(volatile_fields)
 
     source = textwrap.dedent(
         f'''import os
@@ -313,40 +340,43 @@ from typing import List
 import vcr
 
 from ghtest.test_utils import (
-    TestCaseResult,
-    TestRunWithCassette,
+    CaseTestResult,
+    RunTestWithCassette,
     call_with_capture,
     import_function,
 )
 
 
-def {func_name}() -> TestRunWithCassette:
+def {func_name}() -> RunTestWithCassette:
     module = {suggestion.module!r}
     filepath = {suggestion.filepath!r}
     qualname = {suggestion.qualname!r}
     cassette_dir = {cassette_dir!r}
-    cassette_name = {cassette_name!r}
-    cassette_path = os.path.join(cassette_dir, cassette_name)
+    cassette_base = {cassette_base!r}
+    cassette_path = os.path.join(cassette_dir, f"{{cassette_base}}.yaml")
     param_sets = {param_sets_repr}
+    volatile_fields = {volatile_repr}
 
     os.makedirs(cassette_dir, exist_ok=True)
 
-    vcr_recorder = vcr.VCR(
-        serializer="yaml",
-        cassette_library_dir=cassette_dir,
-        record_mode={record_mode!r},
-        match_on=["uri", "method"],
-    )
-
     func = import_function(module, filepath, qualname)
-    results: List[TestCaseResult] = []
+    results: List[CaseTestResult] = []
 
-    with vcr_recorder.use_cassette(cassette_name):
-        for params in param_sets:
-            result = call_with_capture(func, target=qualname, params=params)
-            results.append(result)
+    for idx, params in enumerate(param_sets):
+        recorder = vcr.VCR(
+            serializer="yaml",
+            cassette_library_dir=cassette_dir,
+            record_mode={record_mode!r},
+            match_on=["uri", "method", "body"],
+            filter_headers={list(_SENSITIVE_CASSETTE_HEADERS)!r},
+        )
+        cassette_name = f"{cassette_base}.case_{{idx}}.yaml"
+        with recorder.use_cassette(cassette_name):
+            result = call_with_capture(func, target=qualname, params=params, volatile_return_fields=volatile_fields)
+        result.cassette_path = os.path.join(cassette_dir, cassette_name)
+        results.append(result)
 
-    return TestRunWithCassette(cassette_path=cassette_path, cases=results)
+    return RunTestWithCassette(cassette_path=os.path.join(cassette_dir, f"{cassette_base}.yaml"), cases=results)
         '''
     )
 

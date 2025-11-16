@@ -360,15 +360,52 @@ class _ParamUsageVisitor(ast.NodeVisitor):
             return
         self.used_params.add(name)
         if value is None:
+            bucket = self.literal_hints[name]
+            if None not in bucket:
+                bucket.append(None)
             return
         bucket = self.literal_hints[name]
         if value not in bucket:
             bucket.append(value)
 
+    def _record_dict_hint(self, name: str) -> None:
+        example = {"key": "value"}
+        self._record_value(name, example)
+
+    def _record_list_hint(self, name: str) -> None:
+        self._record_value(name, ["value"])
+
+    def _looks_boolean_param(self, name: str) -> bool:
+        info = self.param_info.get(name)
+        if not info:
+            return False
+        annotation = (info.annotation or "").lower() if info.annotation else ""
+        default_value = getattr(info, "default_value", None)
+        if isinstance(default_value, bool):
+            return True
+        if "bool" in annotation:
+            return True
+        lowered = name.lower()
+        bool_prefixes = ("is_", "has_", "should_", "enable_", "allow_", "use_", "can_", "needs_")
+        if lowered.endswith("_flag") or lowered.startswith(bool_prefixes):
+            return True
+        return False
+
     def _ensure_bool_values(self, name: str) -> None:
+        self.used_params.add(name)
         info = self.param_info.get(name)
         annotation = (info.annotation or "").lower() if info and info.annotation else ""
         default_value = getattr(info, "default_value", None) if info else None
+        if not self._looks_boolean_param(name):
+            # numeric parameters occasionally appear in truthy checks; give small ints if annotated
+            if isinstance(default_value, (int, float)) and not isinstance(default_value, bool):
+                self._record_value(name, 0)
+                self._record_value(name, 1)
+            elif "int" in annotation or "float" in annotation:
+                self._record_value(name, 0)
+                self._record_value(name, 1)
+            return
+
         if isinstance(default_value, (int, float)) and not isinstance(default_value, bool):
             self._record_value(name, 0)
             self._record_value(name, 1)
@@ -470,6 +507,24 @@ class _ParamUsageVisitor(ast.NodeVisitor):
     def visit_Name(self, node: ast.Name) -> None:
         if node.id in self.param_names:
             self.used_params.add(node.id)
+        self.generic_visit(node)
+
+    def visit_Attribute(self, node: ast.Attribute) -> None:
+        base = node.value
+        if isinstance(base, ast.Name) and base.id in self.param_names:
+            self.used_params.add(base.id)
+            attr = node.attr
+            if attr in {"items", "keys", "values", "get", "update", "pop", "setdefault"}:
+                self._record_dict_hint(base.id)
+            elif attr in {"append", "extend", "insert", "pop", "remove", "clear"}:
+                self._record_list_hint(base.id)
+        self.generic_visit(node)
+
+    def visit_Subscript(self, node: ast.Subscript) -> None:
+        base = node.value
+        if isinstance(base, ast.Name) and base.id in self.param_names:
+            self.used_params.add(base.id)
+            self._record_dict_hint(base.id)
         self.generic_visit(node)
 
     def visit_If(self, node: ast.If) -> None:

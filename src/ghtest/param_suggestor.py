@@ -708,10 +708,22 @@ def _extract_test_param_sets_for_func(
 
 
 def _dedupe_param_sets(param_sets: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _freeze(value: Any) -> Any:
+        if isinstance(value, (list, tuple)):
+            return tuple(_freeze(v) for v in value)
+        if isinstance(value, dict):
+            return tuple(sorted((k, _freeze(v)) for k, v in value.items()))
+        if isinstance(value, set):
+            return tuple(sorted(_freeze(v) for v in value))
+        return value
+
     seen = set()
     result: List[Dict[str, Any]] = []
     for ps in param_sets:
-        key = tuple(sorted(ps.items()))
+        try:
+            key = tuple(sorted((k, _freeze(v)) for k, v in ps.items()))
+        except TypeError:
+            key = tuple(sorted((k, repr(v)) for k, v in ps.items()))
         if key in seen:
             continue
         seen.add(key)

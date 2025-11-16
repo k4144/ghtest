@@ -10,14 +10,26 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
-from .tests_creator import SuggestedFunctionTests
-from .test_utils import TestCaseResult, TestRunWithCassette
+from .tests_creator import CrudScenario, ScenarioStep, SuggestedFunctionTests
+from .test_utils import CaseTestResult, RunTestWithCassette, assert_return_summary
 
 
 @dataclass
 class TestArtifact:
     suggestion: SuggestedFunctionTests
-    run: TestRunWithCassette
+    run: RunTestWithCassette
+
+
+@dataclass
+class TestWriterResult:
+    test_modules: List[Path]
+    scenario_modules: List[Path]
+
+
+@dataclass
+class ScenarioDefinition:
+    suggestion: SuggestedFunctionTests
+    cases: List[Tuple[ScenarioStep, CaseTestResult]]
 
 
 class _DataStore:
@@ -55,53 +67,58 @@ def write_test_modules(
     *,
     max_cases_per_module: int = 10,
     inline_char_limit: int = 160,
-) -> List[Path]:
+    include_scenarios: bool = True,
+) -> TestWriterResult:
     out_dir = Path(output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     data_dir = out_dir / "data"
     data_store = _DataStore(data_dir, inline_limit=inline_char_limit)
 
-    case_defs = _collect_cases(artifacts)
-    if not case_defs:
-        return []
+    case_defs, scenario_defs = _collect_cases(artifacts)
+    if not case_defs and not scenario_defs:
+        _cleanup_empty_data_dir(data_dir)
+        return TestWriterResult(test_modules=[], scenario_modules=[])
 
     modules: List[Path] = []
+    scenario_modules: List[Path] = []
     module_index = 0
     current_cases: List[str] = []
-    needs_loader_flags: List[bool] = []
-
-    for case_idx, case_def in enumerate(case_defs):
+    for case_def in case_defs:
         test_src = _render_test_function(case_def, data_store)
         if not test_src:
             continue
         current_cases.append(test_src)
         if len(current_cases) >= max_cases_per_module:
+            need_loader = data_store.used
             module_path = _write_module(
                 out_dir,
                 module_index,
                 current_cases,
-                data_loader=data_store.used,
+                data_loader=need_loader,
             )
             modules.append(module_path)
-            needs_loader_flags.append(data_store.used)
             current_cases = []
             module_index += 1
             data_store.used = False
 
     if current_cases:
+        need_loader = data_store.used
         module_path = _write_module(
             out_dir,
             module_index,
             current_cases,
-            data_loader=data_store.used,
+            data_loader=need_loader,
         )
         modules.append(module_path)
-        needs_loader_flags.append(data_store.used)
+        data_store.used = False
 
-    if not any(needs_loader_flags):
-        _cleanup_empty_data_dir(data_dir)
+    if include_scenarios and scenario_defs:
+        scenario_modules = _write_scenario_modules(out_dir, data_store, scenario_defs)
+        data_store.used = False
 
-    return modules
+    _cleanup_empty_data_dir(data_dir)
+
+    return TestWriterResult(test_modules=modules, scenario_modules=scenario_modules)
 
 
 def _cleanup_empty_data_dir(data_dir: Path) -> None:
@@ -114,38 +131,72 @@ def _cleanup_empty_data_dir(data_dir: Path) -> None:
         pass
 
 
-def _collect_cases(artifacts: Sequence[TestArtifact]) -> List[Tuple[SuggestedFunctionTests, TestCaseResult, int]]:
-    collected: List[Tuple[SuggestedFunctionTests, TestCaseResult, int]] = []
+def _collect_cases(
+    artifacts: Sequence[TestArtifact],
+) -> Tuple[List[Tuple[SuggestedFunctionTests, CaseTestResult, int, Optional[str]]], List[ScenarioDefinition]]:
+    collected: List[Tuple[SuggestedFunctionTests, CaseTestResult, int, Optional[str]]] = []
+    scenarios: List[ScenarioDefinition] = []
+
     for artifact in artifacts:
         suggestion = artifact.suggestion
-        cases = [
-            case
-            for case in artifact.run.cases
-            if case.target == suggestion.qualname
-        ]
-        for idx, case in enumerate(cases):
-            collected.append((suggestion, case, idx))
-    return collected
+        run_cases = list(artifact.run.cases)
+        cassette_path = artifact.run.cassette_path or None
+
+        scenario = suggestion.scenario
+        scenario_case_count = len(scenario.steps) if scenario else 0
+        scenario_cases: List[CaseTestResult] = []
+        if scenario and scenario_case_count and len(run_cases) >= scenario_case_count:
+            scenario_cases = run_cases[-scenario_case_count:]
+            run_cases = run_cases[:-scenario_case_count]
+            steps = scenario.steps
+            if len(steps) == len(scenario_cases):
+                paired = list(zip(steps, scenario_cases))
+                scenarios.append(ScenarioDefinition(suggestion=suggestion, cases=paired))
+
+        main_cases = [case for case in run_cases if case.target == suggestion.qualname]
+        for idx, case in enumerate(main_cases):
+            collected.append((suggestion, case, idx, cassette_path))
+
+    return collected, scenarios
 
 
 def _render_test_function(
-    item: Tuple[SuggestedFunctionTests, TestCaseResult, int],
+    item: Tuple[SuggestedFunctionTests, CaseTestResult, int, Optional[str]],
     data_store: _DataStore,
 ) -> str:
-    suggestion, case, case_idx = item
+    suggestion, case, case_idx, cassette_path = item
     func_name = _make_test_name(suggestion.qualname, case_idx)
     lines: List[str] = []
     lines.append(f"def {func_name}():")
     lines.append(f"    func = import_function({suggestion.module!r}, {suggestion.filepath!r}, {suggestion.qualname!r})")
     params_literal = _format_literal(case.params)
     lines.append(_format_assignment("params", params_literal))
-    lines.append("    result = call_with_capture(func, target={qual!r}, params=params)".format(qual=suggestion.qualname))
+    volatile_literal = _format_literal(case.volatile_return_fields)
+    lines.append(_format_assignment("volatile_fields", volatile_literal))
+    if cassette_path:
+        lines.append(f"    cassette_path = {cassette_path!r}")
+        lines.append("    vcr_recorder = vcr.VCR(serializer='yaml', match_on=['uri', 'method', 'body'], record_mode='none')")
+        lines.append("    with vcr_recorder.use_cassette(cassette_path):")
+        lines.append(
+            "        result = call_with_capture(func, target={qual!r}, params=params, volatile_return_fields=volatile_fields)".format(
+                qual=suggestion.qualname
+            )
+        )
+    else:
+        lines.append(
+            "    result = call_with_capture(func, target={qual!r}, params=params, volatile_return_fields=volatile_fields)".format(
+                qual=suggestion.qualname
+            )
+        )
 
     if case.exception is None:
         lines.append("    assert result.exception is None")
-        return_literal = data_store.literal(case.return_value, label=f"{func_name}_return")
+        return_literal, is_repr = _literal_or_repr(case.return_value, data_store, f"{func_name}_return")
         lines.append(_format_assignment("expected_return", return_literal))
-        lines.append("    assert result.return_value == expected_return")
+        if is_repr:
+            lines.append("    assert repr(result.return_value) == expected_return")
+        else:
+            lines.append("    assert result.return_value == expected_return")
     else:
         exc_type = f"{case.exception.__class__.__module__}.{case.exception.__class__.__name__}"
         message = str(case.exception)
@@ -153,9 +204,23 @@ def _render_test_function(
         lines.append(f"    assert result.exception.__class__.__module__ + '.' + result.exception.__class__.__name__ == {exc_type!r}")
         lines.append(f"    assert str(result.exception) == {message!r}")
 
-    printed_literal = data_store.literal(case.printed, label=f"{func_name}_stdout")
+    printed_literal, printed_repr = _literal_or_repr(case.printed, data_store, f"{func_name}_stdout")
     lines.append(_format_assignment("expected_output", printed_literal))
-    lines.append("    assert result.printed == expected_output")
+    if printed_repr:
+        lines.append("    assert repr(result.printed) == expected_output")
+    else:
+        lines.append("    assert result.printed == expected_output")
+    reads_literal = data_store.literal(case.file_reads, label=f"{func_name}_reads")
+    lines.append(_format_assignment("expected_reads", reads_literal))
+    lines.append("    assert result.file_reads == expected_reads")
+    writes_literal = data_store.literal(case.file_writes, label=f"{func_name}_writes")
+    lines.append(_format_assignment("expected_writes", writes_literal))
+    lines.append("    assert result.file_writes == expected_writes")
+    summary_literal = data_store.literal(case.return_summary, label=f"{func_name}_return_summary")
+    lines.append(_format_assignment("expected_return_summary", summary_literal))
+    lines.append(
+        f"    assert_return_summary(result.return_summary, expected_return_summary, target={suggestion.qualname!r})"
+    )
     return "\n".join(lines) + "\n"
 
 
@@ -168,7 +233,10 @@ def _write_module(
 ) -> Path:
     module_name = f"test_generated_{module_index}"
     module_path = output_dir / f"{module_name}.py"
-    header_lines = ["from ghtest.test_utils import call_with_capture, import_function"]
+    header_lines = [
+        "import vcr",
+        "from ghtest.test_utils import assert_return_summary, call_with_capture, import_function",
+    ]
     header = "\n".join(header_lines).rstrip() + "\n\n"
     if data_loader:
         header += "\n".join(_DATA_LOADER_TEMPLATE).rstrip() + "\n\n"
@@ -176,6 +244,135 @@ def _write_module(
     content = header + body
     module_path.write_text(content, encoding="utf-8")
     return module_path
+
+
+def _write_scenario_modules(
+    output_dir: Path,
+    data_store: _DataStore,
+    scenarios: Sequence[ScenarioDefinition],
+) -> List[Path]:
+    modules: List[Path] = []
+    scenario_dir = output_dir / "scenarios"
+    scenario_dir.mkdir(parents=True, exist_ok=True)
+
+    for idx, scenario_def in enumerate(scenarios):
+        module_path = _write_scenario_module(scenario_dir, idx, scenario_def, data_store)
+        modules.append(module_path)
+        data_store.used = False
+
+    return modules
+
+
+def _write_scenario_module(
+    scenario_dir: Path,
+    index: int,
+    definition: ScenarioDefinition,
+    data_store: _DataStore,
+) -> Path:
+    scenario = definition.suggestion.scenario
+    resource = None
+    if scenario:
+        resource = scenario.resource
+    safe_resource = "".join(ch if ch.isalnum() else "_" for ch in (resource or definition.suggestion.qualname))
+    safe_resource = safe_resource.strip("_") or "scenario"
+    module_name = f"scenario_{safe_resource}_{index}"
+    module_path = scenario_dir / f"{module_name}.py"
+
+    header = textwrap.dedent(
+        """\
+        import os
+
+        from ghtest.test_utils import assert_return_summary, call_with_capture, import_function
+
+        _SCENARIO_ENV = "GHTEST_RUN_SCENARIOS"
+        """
+    )
+
+    if data_store.used:
+        data_store.used = False
+
+    needs_loader = False
+    body = _render_scenario_function(definition, data_store, index)
+    needs_loader = data_store.used
+    if needs_loader:
+        loader = "\n".join(_DATA_LOADER_TEMPLATE).rstrip() + "\n\n"
+    else:
+        loader = ""
+    content = header.rstrip() + "\n\n" + loader + body
+    module_path.write_text(content, encoding="utf-8")
+    return module_path
+
+
+def _render_scenario_function(
+    definition: ScenarioDefinition,
+    data_store: _DataStore,
+    scenario_index: int,
+) -> str:
+    scenario = definition.suggestion.scenario
+    resource = scenario.resource if scenario else definition.suggestion.qualname
+    func_name = _make_test_name(f"{resource}_scenario", scenario_index)
+    lines: List[str] = [
+        f"def {func_name}():",
+        "    if os.environ.get(_SCENARIO_ENV) != '1':",
+        "        raise RuntimeError('Scenario tests disabled; set GHTEST_RUN_SCENARIOS=1 to execute them.')",
+    ]
+
+    for idx, (step, case) in enumerate(definition.cases):
+        comment = step.description or f"Step {idx + 1}: {step.qualname}"
+        lines.append(f"    # {comment}")
+        lines.append(f"    func = import_function({step.module!r}, {step.filepath!r}, {step.qualname!r})")
+        params_literal = _format_literal(step.params)
+        lines.append(_format_assignment("params", params_literal))
+        volatile_literal = _format_literal(case.volatile_return_fields)
+        lines.append(_format_assignment("volatile_fields", volatile_literal))
+        lines.append(
+            "    result = call_with_capture(func, target={qual!r}, params=params, volatile_return_fields=volatile_fields)".format(
+                qual=step.qualname
+            )
+        )
+
+        if case.exception is None:
+            lines.append("    assert result.exception is None")
+            return_literal, return_repr = _literal_or_repr(
+                case.return_value,
+                data_store,
+                f"{func_name}_step_{idx}_return",
+            )
+            lines.append(_format_assignment("expected_return", return_literal))
+            if return_repr:
+                lines.append("    assert repr(result.return_value) == expected_return")
+            else:
+                lines.append("    assert result.return_value == expected_return")
+        else:
+            exc_type = f"{case.exception.__class__.__module__}.{case.exception.__class__.__name__}"
+            message = str(case.exception)
+            lines.append("    assert result.exception is not None")
+            lines.append(f"    assert result.exception.__class__.__module__ + '.' + result.exception.__class__.__name__ == {exc_type!r}")
+            lines.append(f"    assert str(result.exception) == {message!r}")
+
+        printed_literal, printed_repr = _literal_or_repr(
+            case.printed,
+            data_store,
+            f"{func_name}_step_{idx}_stdout",
+        )
+        lines.append(_format_assignment("expected_output", printed_literal))
+        if printed_repr:
+            lines.append("    assert repr(result.printed) == expected_output")
+        else:
+            lines.append("    assert result.printed == expected_output")
+        reads_literal = data_store.literal(case.file_reads, label=f"{func_name}_step_{idx}_reads")
+        lines.append(_format_assignment("expected_reads", reads_literal))
+        lines.append("    assert result.file_reads == expected_reads")
+        writes_literal = data_store.literal(case.file_writes, label=f"{func_name}_step_{idx}_writes")
+        lines.append(_format_assignment("expected_writes", writes_literal))
+        lines.append("    assert result.file_writes == expected_writes")
+        summary_literal = data_store.literal(case.return_summary, label=f"{func_name}_step_{idx}_return_summary")
+        lines.append(_format_assignment("expected_return_summary", summary_literal))
+        lines.append(
+            f"    assert_return_summary(result.return_summary, expected_return_summary, target={step.qualname!r})"
+        )
+
+    return "\n".join(lines) + "\n"
 
 
 def _make_test_name(qualname: str, idx: int) -> str:
@@ -198,6 +395,24 @@ def _format_assignment(name: str, literal: str) -> str:
     formatted = [f"    {name} = {lines[0]}"]
     formatted.extend(f"    {line}" for line in lines[1:])
     return "\n".join(formatted)
+
+
+def _literal_or_repr(value: Any, data_store: _DataStore, label: str) -> Tuple[str, bool]:
+    if _is_literal_value(value):
+        return data_store.literal(value, label=label), False
+    return data_store.literal(repr(value), label=label), True
+
+
+def _is_literal_value(value: Any) -> bool:
+    if value is None:
+        return True
+    if isinstance(value, (bool, int, float, str)):
+        return True
+    if isinstance(value, (list, tuple)):
+        return all(_is_literal_value(v) for v in value)
+    if isinstance(value, dict):
+        return all(isinstance(k, str) and _is_literal_value(v) for k, v in value.items())
+    return False
 
 
 _DATA_LOADER_TEMPLATE = [

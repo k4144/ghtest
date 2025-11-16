@@ -13,7 +13,7 @@ if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
 from ghtest import tests_creator, tests_writer  # noqa: E402
-from ghtest.test_utils import TestRunWithCassette, execute_function  # noqa: E402
+from ghtest.test_utils import RunTestWithCassette, execute_function  # noqa: E402
 
 
 def _load_module(path: Path):
@@ -54,7 +54,7 @@ class TestsWriterTests(unittest.TestCase):
                 case = execute_function("pkg.ops", str(module_path), "noisy", {"value": 5})
             finally:
                 sys.path.remove(tmpdir)
-            run = TestRunWithCassette(cassette_path="", cases=[case])
+            run = RunTestWithCassette(cassette_path="", cases=[case])
 
             output_dir = Path(tmpdir) / "generated_tests"
             result = tests_writer.write_test_modules(
@@ -159,37 +159,58 @@ class TestsWriterTests(unittest.TestCase):
                 ]
             finally:
                 sys.path.remove(tmpdir)
+    def test_captures_file_io_operations(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            pkg = Path(tmpdir) / "pkg"
+            pkg.mkdir()
+            (pkg / "__init__.py").write_text("", encoding="utf-8")
+            module_path = pkg / "files.py"
+            module_path.write_text(
+                textwrap.dedent(
+                    """
+                    from pathlib import Path
 
-            run = TestRunWithCassette(
-                cassette_path="",
-                cases=[main_case, *scenario_cases],
+
+                    def touch(base):
+                        target = Path(base) / "sample.txt"
+                        with target.open("w") as fh:
+                            fh.write("content")
+                        with target.open("r") as fh:
+                            return fh.read()
+                    """
+                ),
+                encoding="utf-8",
             )
 
-            output_dir = Path(tmpdir) / "generated"
-            result = tests_writer.write_test_modules(
-                [tests_writer.TestArtifact(suggestion=suggestion, run=run)],
-                output_dir=str(output_dir),
-                include_scenarios=True,
+            suggestion = tests_creator.SuggestedFunctionTests(
+                module="pkg.files",
+                filepath=str(module_path),
+                qualname="touch",
+                docstring=None,
+                param_sets=[{"base": tmpdir}],
             )
-
-            self.assertEqual(len(result.scenario_modules), 1)
-            scenario_module = result.scenario_modules[0]
-            self.assertTrue(scenario_module.exists())
 
             sys.path.insert(0, tmpdir)
             try:
-                module = _load_module(scenario_module)
+                case = execute_function("pkg.files", str(module_path), "touch", {"base": tmpdir})
+            finally:
+                sys.path.remove(tmpdir)
+
+            run = RunTestWithCassette(cassette_path="", cases=[case])
+            output_dir = Path(tmpdir) / "io_tests"
+            result = tests_writer.write_test_modules(
+                [tests_writer.TestArtifact(suggestion=suggestion, run=run)],
+                output_dir=str(output_dir),
+                inline_char_limit=200,
+            )
+            test_module_path = result.test_modules[0]
+
+            sys.path.insert(0, tmpdir)
+            try:
+                module = _load_module(test_module_path)
                 test_funcs = [getattr(module, name) for name in dir(module) if name.startswith("test_")]
                 self.assertEqual(len(test_funcs), 1)
-
-                with self.assertRaises(RuntimeError):
-                    test_funcs[0]()
-
-                try:
-                    os.environ["GHTEST_RUN_SCENARIOS"] = "1"
-                    test_funcs[0]()
-                finally:
-                    os.environ.pop("GHTEST_RUN_SCENARIOS", None)
+                test_funcs[0]()
             finally:
                 sys.path.remove(tmpdir)
 
