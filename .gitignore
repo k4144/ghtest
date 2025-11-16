@@ -20,3 +20,4 @@ nohup.out
 testdata
 testdata_tests
 tests/cassettes/*
+.coverage

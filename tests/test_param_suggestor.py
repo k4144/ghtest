@@ -128,6 +128,18 @@ SAMPLE_MODULE = textwrap.dedent(
         return vb
 
 
+    def branchy(limit=10, mode=None, flag=False):
+        if limit > 20:
+            return "high"
+        if limit <= 5:
+            return "low"
+        if mode == "all":
+            return "everything"
+        if not flag:
+            return "flag"
+        return "ok"
+
+
     if __name__ == "__main__":
         search(term="api-term", limit=10, verbose=True)
         lookup(term=GH_API_TERM1)
@@ -274,6 +286,20 @@ class ModuleGlobalSuggestionTests(unittest.TestCase):
 
         term_values = {ps["term"] for ps in suggestions.param_sets if "term" in ps}
         self.assertEqual(term_values, {"api-term"})
+
+    def test_branch_analysis_generates_param_variants(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            self._write_sample_module(tmpdir)
+            func = self._scan_target(tmpdir, qualname="branchy")
+
+            suggestions = param_suggestor.suggest_params(func)
+
+        param_sets = suggestions.param_sets
+        self.assertTrue(any(ps.get("limit", 0) > 20 for ps in param_sets))
+        self.assertTrue(any(ps.get("limit", 100) <= 5 for ps in param_sets if "limit" in ps))
+        self.assertTrue(any(ps.get("mode") == "all" for ps in param_sets))
+        self.assertTrue(any(ps.get("flag") is False for ps in param_sets))
+        self.assertTrue(any(ps.get("flag") is True for ps in param_sets))
 
     def test_scanner_extracts_sample_calls_from_main_block(self):
         with tempfile.TemporaryDirectory() as tmpdir:

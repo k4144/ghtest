@@ -9,7 +9,7 @@ import string
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 VERBOSITY_PARAM_TOKENS = ("verbose", "verbosity", "vb", "print", "show")
 _PARAM_HISTORY_ENV = "GHTEST_PARAM_HISTORY"
@@ -884,6 +884,12 @@ def suggest_params(
                 param_sets.append(call_kwargs)
                 _record(call_kwargs)
 
+    if not literal_only:
+        branch_calls = _build_branch_param_sets(func, minimal)
+        for call_kwargs in branch_calls:
+            param_sets.append(call_kwargs)
+            _record(call_kwargs)
+
     param_sets = _dedupe_param_sets(param_sets)
     _update_param_history(observed_values)
     _update_param_database(func, observed_values)
@@ -1180,6 +1186,294 @@ def _update_param_database(func: "FunctionInfo", observed: Dict[str, List[Any]])
         if wrote:
             global _PARAM_DB_CACHE
             _PARAM_DB_CACHE = None
+
+
+_AST_MODULE_CACHE: Dict[str, Optional[ast.Module]] = {}
+
+
+@dataclass
+class _BranchHint:
+    param: str
+    kind: str
+    value: Any
+
+
+def _build_branch_param_sets(func: "FunctionInfo", base_kwargs: Dict[str, Any]) -> List[Dict[str, Any]]:
+    node = _load_function_node(func.filepath, func.qualname)
+    if node is None:
+        return []
+    param_names = {p.name for p in func.parameters}
+    if not param_names:
+        return []
+    collector = _BranchHintCollector(param_names, root=node)
+    collector.visit(node)
+    branch_calls: List[Dict[str, Any]] = []
+    for hint in collector.hints:
+        values = _branch_hint_candidate_values(hint)
+        for candidate in values:
+            if candidate is _MISSING_LITERAL:
+                continue
+            kwargs = dict(base_kwargs)
+            kwargs[hint.param] = candidate
+            branch_calls.append(kwargs)
+    return branch_calls
+
+
+def _load_function_node(filepath: Optional[str], qualname: str) -> Optional[ast.AST]:
+    if not filepath or not qualname:
+        return None
+    module = _load_ast_module(filepath)
+    if module is None:
+        return None
+    finder = _TargetFunctionFinder(qualname)
+    finder.visit(module)
+    return finder.found
+
+
+def _load_ast_module(filepath: str) -> Optional[ast.Module]:
+    if filepath in _AST_MODULE_CACHE:
+        return _AST_MODULE_CACHE[filepath]
+    try:
+        with open(filepath, "r", encoding="utf-8") as f:
+            source = f.read()
+    except OSError:
+        _AST_MODULE_CACHE[filepath] = None
+        return None
+    try:
+        tree = ast.parse(source, filename=filepath)
+    except SyntaxError:
+        tree = None
+    _AST_MODULE_CACHE[filepath] = tree
+    return tree
+
+
+class _TargetFunctionFinder(ast.NodeVisitor):
+    def __init__(self, target: str) -> None:
+        self.target = target
+        self.stack: List[str] = []
+        self.found: Optional[ast.AST] = None
+
+    def visit_ClassDef(self, node: ast.ClassDef) -> None:
+        if self.found:
+            return
+        self.stack.append(node.name)
+        self.generic_visit(node)
+        self.stack.pop()
+
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
+        if self.found:
+            return
+        current = ".".join(self.stack + [node.name])
+        if current == self.target:
+            self.found = node
+            return
+        self.generic_visit(node)
+
+    def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
+        self.visit_FunctionDef(node)  # type: ignore[arg-type]
+
+
+_MISSING_LITERAL = object()
+
+
+def _literal_or_missing(node: ast.AST) -> Any:
+    try:
+        return ast.literal_eval(node)
+    except Exception:
+        return _MISSING_LITERAL
+
+
+class _BranchHintCollector(ast.NodeVisitor):
+    def __init__(self, param_names: Set[str], *, root: ast.AST) -> None:
+        self.param_names = param_names
+        self.root = root
+        self.hints: List[_BranchHint] = []
+        self._seen: Set[Tuple[str, str, Any]] = set()
+
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
+        if node is self.root:
+            self.generic_visit(node)
+        # Skip nested function bodies.
+        return
+
+    def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
+        if node is self.root:
+            self.generic_visit(node)
+        return
+
+    def visit_If(self, node: ast.If) -> None:
+        self._analyze_expr(node.test)
+        self.generic_visit(node)
+
+    def visit_While(self, node: ast.While) -> None:
+        self._analyze_expr(node.test)
+        self.generic_visit(node)
+
+    def visit_BoolOp(self, node: ast.BoolOp) -> None:
+        for value in node.values:
+            self._analyze_expr(value)
+
+    def _analyze_expr(self, expr: ast.AST) -> None:
+        if isinstance(expr, ast.BoolOp):
+            for value in expr.values:
+                self._analyze_expr(value)
+            return
+        if isinstance(expr, ast.UnaryOp) and isinstance(expr.op, ast.Not):
+            name = self._param_from_node(expr.operand)
+            if name:
+                self._record_hint(name, "falsy", None)
+            return
+        if isinstance(expr, ast.Name):
+            name = self._param_from_node(expr)
+            if name:
+                self._record_hint(name, "truthy", None)
+            return
+        if isinstance(expr, ast.Compare):
+            self._handle_compare(expr)
+
+    def _handle_compare(self, node: ast.Compare) -> None:
+        if len(node.ops) != 1 or len(node.comparators) != 1:
+            return
+        op = node.ops[0]
+        right = node.comparators[0]
+        left_name = self._param_from_node(node.left)
+        right_name = self._param_from_node(right)
+        right_value = _literal_or_missing(right)
+        left_value = _literal_or_missing(node.left)
+        if left_name and right_value is not _MISSING_LITERAL:
+            kind = _compare_op_kind(op, flipped=False)
+            if kind:
+                self._record_hint(left_name, kind, right_value)
+            return
+        if right_name and left_value is not _MISSING_LITERAL:
+            kind = _compare_op_kind(op, flipped=True)
+            if kind:
+                self._record_hint(right_name, kind, left_value)
+            return
+
+    def _param_from_node(self, node: ast.AST) -> Optional[str]:
+        if isinstance(node, ast.Name) and node.id in self.param_names:
+            return node.id
+        return None
+
+    def _record_hint(self, param: str, kind: str, value: Any) -> None:
+        hashable = _hashable_value(value)
+        key = (param, kind, hashable)
+        if key in self._seen:
+            return
+        self._seen.add(key)
+        self.hints.append(_BranchHint(param=param, kind=kind, value=value))
+
+
+def _compare_op_kind(op: ast.cmpop, *, flipped: bool) -> Optional[str]:
+    mapping = {
+        ast.Eq: "eq",
+        ast.NotEq: "ne",
+        ast.Is: "eq",
+        ast.IsNot: "ne",
+        ast.Gt: "gt",
+        ast.GtE: "ge",
+        ast.Lt: "lt",
+        ast.LtE: "le",
+        ast.In: "in",
+        ast.NotIn: "not_in",
+    }
+    for node_type, label in mapping.items():
+        if isinstance(op, node_type):
+            kind = label
+            break
+    else:
+        return None
+    if flipped and kind in {"gt", "ge", "lt", "le"}:
+        swap = {"gt": "lt", "ge": "le", "lt": "gt", "le": "ge"}
+        kind = swap[kind]
+    # "in" comparisons are only supported when parameter is on the left side.
+    if flipped and kind in {"in", "not_in"}:
+        return None
+    return kind
+
+
+def _hashable_value(value: Any) -> Any:
+    if isinstance(value, list):
+        return tuple(_hashable_value(v) for v in value)
+    if isinstance(value, dict):
+        return tuple(sorted((k, _hashable_value(v)) for k, v in value.items()))
+    if isinstance(value, set):
+        return tuple(sorted(_hashable_value(v) for v in value))
+    return value
+
+
+def _branch_hint_candidate_values(hint: _BranchHint) -> List[Any]:
+    if hint.kind == "truthy":
+        return [True, False]
+    if hint.kind == "falsy":
+        return [False, True]
+    if hint.kind == "eq":
+        alt = _branch_alt_value(hint.value)
+        values = [hint.value]
+        if alt is not None:
+            values.append(alt)
+        return values
+    if hint.kind == "ne":
+        alt = _branch_alt_value(hint.value)
+        return [alt] if alt is not None else []
+    if hint.kind in {"gt", "ge", "lt", "le"}:
+        return _numeric_branch_values(hint.value, hint.kind)
+    if hint.kind == "in":
+        options = list(hint.value) if isinstance(hint.value, (list, tuple, set)) else []
+        if not options:
+            return []
+        alt = _branch_alt_value(options[0])
+        result = [options[0]]
+        if alt is not None:
+            result.append(alt)
+        return result
+    if hint.kind == "not_in":
+        options = list(hint.value) if isinstance(hint.value, (list, tuple, set)) else []
+        if not options:
+            return []
+        alt = _branch_alt_value(options[0])
+        if alt is None:
+            return []
+        while alt in options:
+            alt = _branch_alt_value(alt)
+            if alt is None:
+                break
+        return [alt] if alt is not None else []
+    return []
+
+
+def _numeric_branch_values(value: Any, kind: str) -> List[Any]:
+    if isinstance(value, bool):
+        value = int(value)
+    if not isinstance(value, (int, float)):
+        return []
+    step = 1 if isinstance(value, int) else 0.5
+    if kind == "gt":
+        return [value + step, value]
+    if kind == "ge":
+        return [value, value - step]
+    if kind == "lt":
+        return [value - step, value]
+    if kind == "le":
+        return [value, value + step]
+    return []
+
+
+def _branch_alt_value(value: Any) -> Optional[Any]:
+    if isinstance(value, bool):
+        return not value
+    if isinstance(value, int):
+        return value + 1
+    if isinstance(value, float):
+        return value + 1.0
+    if value is None:
+        return True
+    if isinstance(value, str):
+        return value + "_alt"
+    if isinstance(value, (list, tuple, set)):
+        return next(iter(value), None) if isinstance(value, set) else (value[0] if value else None)
+    return None
 
 
 def _generate_resource_identifier(resource: Optional[str]) -> str:

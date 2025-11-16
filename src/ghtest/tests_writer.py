@@ -69,6 +69,7 @@ def write_test_modules(
     max_cases_per_module: int = 10,
     inline_char_limit: int = 160,
     include_scenarios: bool = True,
+    include_return_summary: bool = True,
 ) -> TestWriterResult:
     out_dir = Path(output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -85,7 +86,7 @@ def write_test_modules(
     module_index = 0
     current_cases: List[str] = []
     for case_def in case_defs:
-        test_src = _render_test_function(case_def, data_store)
+        test_src = _render_test_function(case_def, data_store, include_return_summary=include_return_summary)
         if not test_src:
             continue
         current_cases.append(test_src)
@@ -96,6 +97,7 @@ def write_test_modules(
                 module_index,
                 current_cases,
                 data_loader=need_loader,
+                include_return_summary=include_return_summary,
             )
             modules.append(module_path)
             current_cases = []
@@ -109,12 +111,18 @@ def write_test_modules(
             module_index,
             current_cases,
             data_loader=need_loader,
+            include_return_summary=include_return_summary,
         )
         modules.append(module_path)
         data_store.used = False
 
     if include_scenarios and scenario_defs:
-        scenario_modules = _write_scenario_modules(out_dir, data_store, scenario_defs)
+        scenario_modules = _write_scenario_modules(
+            out_dir,
+            data_store,
+            scenario_defs,
+            include_return_summary=include_return_summary,
+        )
         data_store.used = False
 
     _cleanup_empty_data_dir(data_dir)
@@ -146,10 +154,13 @@ def _collect_cases(
         scenario_case_count = len(scenario.steps) if scenario else 0
         scenario_cases: List[CaseTestResult] = []
         if scenario and scenario_case_count and len(run_cases) >= scenario_case_count:
-            scenario_cases = run_cases[-scenario_case_count:]
-            run_cases = run_cases[:-scenario_case_count]
             steps = scenario.steps
-            if len(steps) == len(scenario_cases):
+            candidate = run_cases[-scenario_case_count:]
+            expected_targets = [step.qualname for step in steps]
+            actual_targets = [case.target for case in candidate]
+            if actual_targets == expected_targets:
+                scenario_cases = candidate
+                run_cases = run_cases[:-scenario_case_count]
                 paired = list(zip(steps, scenario_cases))
                 scenarios.append(ScenarioDefinition(suggestion=suggestion, cases=paired))
 
@@ -163,6 +174,8 @@ def _collect_cases(
 def _render_test_function(
     item: Tuple[SuggestedFunctionTests, CaseTestResult, int],
     data_store: _DataStore,
+    *,
+    include_return_summary: bool,
 ) -> str:
     suggestion, case, case_idx = item
     func_name = _make_test_name(suggestion.qualname, case_idx)
@@ -217,11 +230,12 @@ def _render_test_function(
     writes_literal = data_store.literal(case.file_writes, label=f"{func_name}_writes")
     lines.append(_format_assignment("expected_writes", writes_literal))
     lines.append("    assert result.file_writes == expected_writes")
-    summary_literal = data_store.literal(case.return_summary, label=f"{func_name}_return_summary")
-    lines.append(_format_assignment("expected_return_summary", summary_literal))
-    lines.append(
-        f"    assert_return_summary(result.return_summary, expected_return_summary, target={suggestion.qualname!r})"
-    )
+    if include_return_summary:
+        summary_literal = data_store.literal(case.return_summary, label=f"{func_name}_return_summary")
+        lines.append(_format_assignment("expected_return_summary", summary_literal))
+        lines.append(
+            f"    assert_return_summary(result.return_summary, expected_return_summary, target={suggestion.qualname!r})"
+        )
     return "\n".join(lines) + "\n"
 
 
@@ -231,13 +245,15 @@ def _write_module(
     tests: List[str],
     *,
     data_loader: bool,
+    include_return_summary: bool,
 ) -> Path:
     module_name = f"test_generated_{module_index}"
     module_path = output_dir / f"{module_name}.py"
-    header_lines = [
-        "import vcr",
-        "from ghtest.test_utils import assert_return_summary, call_with_capture, import_function",
-    ]
+    header_lines = ["import vcr"]
+    if include_return_summary:
+        header_lines.append("from ghtest.test_utils import assert_return_summary, call_with_capture, import_function")
+    else:
+        header_lines.append("from ghtest.test_utils import call_with_capture, import_function")
     header = "\n".join(header_lines).rstrip() + "\n\n"
     if data_loader:
         header += "\n".join(_DATA_LOADER_TEMPLATE).rstrip() + "\n\n"
@@ -251,13 +267,21 @@ def _write_scenario_modules(
     output_dir: Path,
     data_store: _DataStore,
     scenarios: Sequence[ScenarioDefinition],
+    *,
+    include_return_summary: bool,
 ) -> List[Path]:
     modules: List[Path] = []
     scenario_dir = output_dir / "scenarios"
     scenario_dir.mkdir(parents=True, exist_ok=True)
 
     for idx, scenario_def in enumerate(scenarios):
-        module_path = _write_scenario_module(scenario_dir, idx, scenario_def, data_store)
+        module_path = _write_scenario_module(
+            scenario_dir,
+            idx,
+            scenario_def,
+            data_store,
+            include_return_summary=include_return_summary,
+        )
         modules.append(module_path)
         data_store.used = False
 
@@ -269,6 +293,8 @@ def _write_scenario_module(
     index: int,
     definition: ScenarioDefinition,
     data_store: _DataStore,
+    *,
+    include_return_summary: bool,
 ) -> Path:
     scenario = definition.suggestion.scenario
     resource = None
@@ -279,12 +305,16 @@ def _write_scenario_module(
     module_name = f"scenario_{safe_resource}_{index}"
     module_path = scenario_dir / f"{module_name}.py"
 
+    if include_return_summary:
+        header_import = "from ghtest.test_utils import assert_return_summary, call_with_capture, import_function"
+    else:
+        header_import = "from ghtest.test_utils import call_with_capture, import_function"
     header = textwrap.dedent(
-        """\
+        f"""\
         import os
         import vcr
 
-        from ghtest.test_utils import assert_return_summary, call_with_capture, import_function
+        {header_import}
 
         _SCENARIO_ENV = "GHTEST_RUN_SCENARIOS"
         """
@@ -294,7 +324,12 @@ def _write_scenario_module(
         data_store.used = False
 
     needs_loader = False
-    body = _render_scenario_function(definition, data_store, index)
+    body = _render_scenario_function(
+        definition,
+        data_store,
+        index,
+        include_return_summary=include_return_summary,
+    )
     needs_loader = data_store.used
     if needs_loader:
         loader = "\n".join(_DATA_LOADER_TEMPLATE).rstrip() + "\n\n"
@@ -309,6 +344,8 @@ def _render_scenario_function(
     definition: ScenarioDefinition,
     data_store: _DataStore,
     scenario_index: int,
+    *,
+    include_return_summary: bool,
 ) -> str:
     scenario = definition.suggestion.scenario
     resource = scenario.resource if scenario else definition.suggestion.qualname
@@ -379,11 +416,12 @@ def _render_scenario_function(
         writes_literal = data_store.literal(case.file_writes, label=f"{func_name}_step_{idx}_writes")
         lines.append(_format_assignment("expected_writes", writes_literal))
         lines.append("    assert result.file_writes == expected_writes")
-        summary_literal = data_store.literal(case.return_summary, label=f"{func_name}_step_{idx}_return_summary")
-        lines.append(_format_assignment("expected_return_summary", summary_literal))
-        lines.append(
-            f"    assert_return_summary(result.return_summary, expected_return_summary, target={step.qualname!r})"
-        )
+        if include_return_summary:
+            summary_literal = data_store.literal(case.return_summary, label=f"{func_name}_step_{idx}_return_summary")
+            lines.append(_format_assignment("expected_return_summary", summary_literal))
+            lines.append(
+                f"    assert_return_summary(result.return_summary, expected_return_summary, target={step.qualname!r})"
+            )
 
     return "\n".join(lines) + "\n"
 

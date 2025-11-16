@@ -195,8 +195,6 @@ def _should_confirm_execution(suggestion: SuggestedFunctionTests) -> bool:
 
 
 def _prompt_user_confirmation(suggestion: SuggestedFunctionTests) -> None:
-    if os.environ.get("GHTEST_ASSUME_SAFE") == "1":
-        return
     prompt = (
         f"Function {suggestion.qualname} in {suggestion.filepath} may perform destructive actions.\n"
         "Proceed with executing auto-generated tests? [y/N]: "
@@ -211,8 +209,8 @@ def _format_step_summary(step: ScenarioStep) -> str:
     return f"{step.qualname}({param_display})"
 
 
-def _confirm_crud_scenario(scenario: CrudScenario) -> None:
-    if os.environ.get("GHTEST_ASSUME_SAFE") == "1":
+def _confirm_crud_scenario(scenario: CrudScenario, interactive=True) -> None:
+    if not interactive:
         return
     lines = [
         f"Planned CRUD scenario for resource '{scenario.resource}' as '{scenario.identifier}':",
@@ -224,7 +222,9 @@ def _confirm_crud_scenario(scenario: CrudScenario) -> None:
     lines.append("Proceed with the full sequence? [y/N]: ")
     response = input("\n".join(lines))
     if response.strip().lower() not in {"y", "yes"}:
-        raise RuntimeError("Aborted CRUD scenario execution.")
+        print("Aborted CRUD scenario execution.")
+        return
+    return True
 
 
 def _execute_scenario_step(step: ScenarioStep, record: bool = True) -> CaseTestResult:
@@ -238,9 +238,15 @@ def _execute_scenario_step(step: ScenarioStep, record: bool = True) -> CaseTestR
     return result
 
 
-def _run_crud_scenario(scenario: CrudScenario) -> List[CaseTestResult]:
-    _confirm_crud_scenario(scenario)
+def _run_crud_scenario(scenario: CrudScenario, interactive=True) -> List[CaseTestResult]:
+    assume_safe = os.environ.get('GHTEST_ASSUME_SAFE') == '1'
+    if assume_safe:
+        confirmed = True
+    else:
+        confirmed = _confirm_crud_scenario(scenario, interactive=interactive)
     results: List[CaseTestResult] = []
+    if not assume_safe and not confirmed:
+        return results
     cleanup_step = next((s for s in scenario.steps if s.cleanup), None)
     cleanup_executed = False
     pending_error: Optional[BaseException] = None
@@ -269,32 +275,36 @@ def _run_crud_scenario(scenario: CrudScenario) -> List[CaseTestResult]:
 def make_test_function(
     suggestion: SuggestedFunctionTests,
     cassette_dir: str,
-    record_mode: str = "once",
+    record_mode: str = 'once',
     volatile_response_fields: Optional[Sequence[str]] = None,
 ) -> GeneratedTest:
     os.makedirs(cassette_dir, exist_ok=True)
 
     func_name = f"test_{suggestion.qualname.replace('.', '_')}"
-    cassette_base = f"{suggestion.module}.{suggestion.qualname}".replace(":", "_")
-    cassette_path = os.path.join(cassette_dir, f"{cassette_base}.yaml")
+    cassette_base = f'{suggestion.module}.{suggestion.qualname}'.replace(':', '_')
+    cassette_path = os.path.join(cassette_dir, f'{cassette_base}.yaml')
     if volatile_response_fields is None:
         volatile_fields: Optional[List[str]] = None
     else:
         volatile_fields = list(volatile_response_fields)
 
-    def test() -> RunTestWithCassette:
+    def test(interactive=True) -> RunTestWithCassette:
         if _should_confirm_execution(suggestion):
-            _prompt_user_confirmation(suggestion)
+            if not os.environ.get('GHTEST_ASSUME_SAFE') == '1':
+                if interactive:
+                    _prompt_user_confirmation(suggestion)
+                else:
+                    raise RuntimeError('aborted executing potentially destructive test target.')
         func = import_function(suggestion.module, suggestion.filepath, suggestion.qualname)
         results: List[CaseTestResult] = []
 
         for idx, params in enumerate(suggestion.param_sets):
             case_cassette = f"{cassette_base}.case_{idx}.yaml"
             recorder = vcr.VCR(
-                serializer="yaml",
+                serializer='yaml',
                 cassette_library_dir=cassette_dir,
                 record_mode=record_mode,
-                match_on=["uri", "method", "body"],
+                match_on=['uri', 'method', 'body'],
             )
             with recorder.use_cassette(case_cassette):
                 result = call_with_capture(
@@ -307,7 +317,7 @@ def make_test_function(
             results.append(result)
 
         if suggestion.scenario:
-            scenario_results = _run_crud_scenario(suggestion.scenario)
+            scenario_results = _run_crud_scenario(suggestion.scenario, interactive=interactive)
             results.extend(scenario_results)
 
         return RunTestWithCassette(
@@ -317,7 +327,7 @@ def make_test_function(
 
     test.__name__ = func_name
     if suggestion.docstring:
-        test.__doc__ = f"Auto-generated test for {suggestion.qualname} with VCR.\n\n{suggestion.docstring}"
+        test.__doc__ = f'Auto-generated test for {suggestion.qualname} with VCR.\n\n{suggestion.docstring}'
 
     param_sets_repr = repr(suggestion.param_sets)
     volatile_repr = repr(volatile_fields)

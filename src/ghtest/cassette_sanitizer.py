@@ -276,7 +276,7 @@ def _sanitize_http_body(body: Any) -> bool:
     return changed
 
 
-def main(argv: List[str] | None = None) -> int:
+def main(argv: List[str] | None = None, vb:int=0) -> int:
     parser = argparse.ArgumentParser(description="Sanitize VCR cassette files.")
     parser.add_argument("paths", nargs="+", help="Cassette files or directories to sanitize.")
     parser.add_argument("--dry-run", action="store_true", help="Report changes without writing files.")
@@ -287,7 +287,8 @@ def main(argv: List[str] | None = None) -> int:
         return 1
     changed, total = sanitize_paths(targets, dry_run=args.dry_run)
     status = "would change" if args.dry_run else "updated"
-    print(f"{status} {changed} cassette(s) out of {total}")
+    if vb:
+        print(f"{status} {changed} cassette(s) out of {total}")
     return 0
 
 
