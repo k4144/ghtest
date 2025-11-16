@@ -7,7 +7,6 @@ import types
 import unittest
 from contextlib import contextmanager
 from pathlib import Path
-from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 SRC_DIR = ROOT / "src"
@@ -166,53 +165,6 @@ def delete_item(name, dry_run=False):
                 self.assertTrue(all(case.exception is None for case in scenario_cases))
             finally:
                 sys.path.remove(tmpdir)
-
-
-class TestsCreatorCassetteConfigTests(unittest.TestCase):
-    def test_cassettes_filter_sensitive_headers(self):
-        with tempfile.TemporaryDirectory() as tmpdir:
-            recorded_kwargs = []
-            module_path = Path(tmpdir) / "ops.py"
-            module_path.write_text("def noop():\n    return None\n", encoding="utf-8")
-
-            suggestion = tests_creator.SuggestedFunctionTests(
-                module="samplepkg.ops",
-                filepath=str(module_path),
-                qualname="noop",
-                docstring=None,
-                param_sets=[{}],
-            )
-
-            class RecorderStub:
-                def __init__(self, **kwargs):
-                    recorded_kwargs.append(kwargs)
-
-                def use_cassette(self, *_args, **__kwargs):
-                    @contextmanager
-                    def _noop():
-                        yield
-
-                    return _noop()
-
-            def fake_call_with_capture(*_args, **__kwargs):
-                return tests_creator.CaseTestResult(
-                    target="noop",
-                    params={},
-                    return_value=None,
-                    printed="",
-                    exception=None,
-                )
-
-            with mock.patch.object(tests_creator, "import_function", return_value=lambda *_a, **_kw: None):
-                with mock.patch.object(tests_creator, "call_with_capture", side_effect=fake_call_with_capture):
-                    with mock.patch.object(tests_creator.vcr, "VCR", side_effect=lambda **kwargs: RecorderStub(**kwargs)):
-                        generated = tests_creator.make_test_function(suggestion, cassette_dir=tmpdir)
-                        generated.test_callable()
-
-        self.assertTrue(recorded_kwargs)
-        expected = list(tests_creator._SENSITIVE_CASSETTE_HEADERS)
-        for kwargs in recorded_kwargs:
-            self.assertEqual(kwargs.get("filter_headers"), expected)
 
 
 if __name__ == "__main__":

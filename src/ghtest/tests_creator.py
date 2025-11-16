@@ -73,16 +73,6 @@ class GeneratedTest:
     source: str        # Python source code of an equivalent test function
 
 
-# Headers carrying authentication secrets; strip them from recorded cassettes.
-_SENSITIVE_CASSETTE_HEADERS = (
-    "authorization",
-    "proxy-authorization",
-    "x-api-key",
-    "x-auth-token",
-    "x-github-otp",
-)
-
-
 _DESTRUCTIVE_NAME_HINTS = (
     "remove",
     "delete",
@@ -305,7 +295,6 @@ def make_test_function(
                 cassette_library_dir=cassette_dir,
                 record_mode=record_mode,
                 match_on=["uri", "method", "body"],
-                filter_headers=list(_SENSITIVE_CASSETTE_HEADERS),
             )
             with recorder.use_cassette(case_cassette):
                 result = call_with_capture(
@@ -368,7 +357,6 @@ def {func_name}() -> RunTestWithCassette:
             cassette_library_dir=cassette_dir,
             record_mode={record_mode!r},
             match_on=["uri", "method", "body"],
-            filter_headers={list(_SENSITIVE_CASSETTE_HEADERS)!r},
         )
         cassette_name = f"{cassette_base}.case_{{idx}}.yaml"
         with recorder.use_cassette(cassette_name):
