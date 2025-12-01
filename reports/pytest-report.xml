@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="4" failures="0" skipped="0" tests="4" time="1.446" timestamp="2025-12-01T18:05:19.449094+00:00" hostname="runnervmg1sw1"><testcase classname="" name="src.ghtest.test_utils" time="0.000"><error message="collection failure">ImportError while importing test module '/home/runner/work/ghtest/ghtest/src/ghtest/test_utils.py'.
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="4" failures="0" skipped="0" tests="4" time="0.869" timestamp="2025-12-01T18:07:01.240417+00:00" hostname="runnervmg1sw1"><testcase classname="" name="src.ghtest.test_utils" time="0.000"><error message="collection failure">ImportError while importing test module '/home/runner/work/ghtest/ghtest/src/ghtest/test_utils.py'.
 Hint: make sure your test modules/packages have valid Python names.
 Traceback:
 /opt/hostedtoolcache/Python/3.13.9/x64/lib/python3.13/importlib/__init__.py:88: in import_module
