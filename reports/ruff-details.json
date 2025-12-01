@@ -151,39 +151,6 @@
   },
   {
     "cell": null,
-    "code": "F401",
-    "end_location": {
-      "column": 20,
-      "row": 17
-    },
-    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/analyze_tests.py",
-    "fix": {
-      "applicability": "safe",
-      "edits": [
-        {
-          "content": "",
-          "end_location": {
-            "column": 1,
-            "row": 18
-          },
-          "location": {
-            "column": 1,
-            "row": 17
-          }
-        }
-      ],
-      "message": "Remove unused import: `import_ipynb`"
-    },
-    "location": {
-      "column": 8,
-      "row": 17
-    },
-    "message": "`import_ipynb` imported but unused",
-    "noqa_row": 17,
-    "url": "https://docs.astral.sh/ruff/rules/unused-import"
-  },
-  {
-    "cell": null,
     "code": "E701",
     "end_location": {
       "column": 18,
