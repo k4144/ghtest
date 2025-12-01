@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="4" failures="0" skipped="0" tests="4" time="0.777" timestamp="2025-12-01T17:53:07.071257+00:00" hostname="runnervmg1sw1"><testcase classname="" name="src.ghtest.test_utils" time="0.000"><error message="collection failure">ImportError while importing test module '/home/runner/work/ghtest/ghtest/src/ghtest/test_utils.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/hostedtoolcache/Python/3.13.9/x64/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/ghtest/__init__.py:6: in &lt;module&gt;
+    from .analyze_tests import print_test_summary
+src/ghtest/analyze_tests.py:17: in &lt;module&gt;
+    import import_ipynb
+E   ModuleNotFoundError: No module named 'import_ipynb'</error></testcase><testcase classname="" name="tests.test_cassette_sanitizer" time="0.000"><error message="collection failure">ImportError while importing test module '/home/runner/work/ghtest/ghtest/tests/test_cassette_sanitizer.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/hostedtoolcache/Python/3.13.9/x64/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_cassette_sanitizer.py:2: in &lt;module&gt;
+    from ghtest.cassette_sanitizer import (
+src/ghtest/__init__.py:6: in &lt;module&gt;
+    from .analyze_tests import print_test_summary
+src/ghtest/analyze_tests.py:17: in &lt;module&gt;
+    import import_ipynb
+E   ModuleNotFoundError: No module named 'import_ipynb'</error></testcase><testcase classname="" name="tests.test_cli" time="0.000"><error message="collection failure">ImportError while importing test module '/home/runner/work/ghtest/ghtest/tests/test_cli.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/hostedtoolcache/Python/3.13.9/x64/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_cli.py:4: in &lt;module&gt;
+    from ghtest.cli import main
+src/ghtest/__init__.py:6: in &lt;module&gt;
+    from .analyze_tests import print_test_summary
+src/ghtest/analyze_tests.py:17: in &lt;module&gt;
+    import import_ipynb
+E   ModuleNotFoundError: No module named 'import_ipynb'</error></testcase><testcase classname="" name="tests.test_core" time="0.000"><error message="collection failure">ImportError while importing test module '/home/runner/work/ghtest/ghtest/tests/test_core.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/hostedtoolcache/Python/3.13.9/x64/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_core.py:5: in &lt;module&gt;
+    from ghtest.core import create_tests
+src/ghtest/__init__.py:6: in &lt;module&gt;
+    from .analyze_tests import print_test_summary
+src/ghtest/analyze_tests.py:17: in &lt;module&gt;
+    import import_ipynb
+E   ModuleNotFoundError: No module named 'import_ipynb'</error></testcase></testsuite></testsuites>

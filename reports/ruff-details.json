@@ -1,0 +1,2184 @@
+[
+  {
+    "cell": null,
+    "code": "F821",
+    "end_location": {
+      "column": 20,
+      "row": 11
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/__init__.py",
+    "fix": null,
+    "location": {
+      "column": 5,
+      "row": 11
+    },
+    "message": "Undefined name `param_suggestor`",
+    "noqa_row": 11,
+    "url": "https://docs.astral.sh/ruff/rules/undefined-name"
+  },
+  {
+    "cell": null,
+    "code": "F821",
+    "end_location": {
+      "column": 12,
+      "row": 12
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/__init__.py",
+    "fix": null,
+    "location": {
+      "column": 5,
+      "row": 12
+    },
+    "message": "Undefined name `scanner`",
+    "noqa_row": 12,
+    "url": "https://docs.astral.sh/ruff/rules/undefined-name"
+  },
+  {
+    "cell": null,
+    "code": "F821",
+    "end_location": {
+      "column": 18,
+      "row": 13
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/__init__.py",
+    "fix": null,
+    "location": {
+      "column": 5,
+      "row": 13
+    },
+    "message": "Undefined name `tests_creator`",
+    "noqa_row": 13,
+    "url": "https://docs.astral.sh/ruff/rules/undefined-name"
+  },
+  {
+    "cell": null,
+    "code": "E401",
+    "end_location": {
+      "column": 32,
+      "row": 9
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/analyze_tests.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "import os\nimport time\nimport re\nimport sys\nimport glob\nimport yaml",
+          "end_location": {
+            "column": 32,
+            "row": 9
+          },
+          "location": {
+            "column": 1,
+            "row": 9
+          }
+        }
+      ],
+      "message": "Split imports"
+    },
+    "location": {
+      "column": 1,
+      "row": 9
+    },
+    "message": "Multiple imports on one line",
+    "noqa_row": 9,
+    "url": "https://docs.astral.sh/ruff/rules/multiple-imports-on-one-line"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 15,
+      "row": 9
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/analyze_tests.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "import os,re,glob,yaml",
+          "end_location": {
+            "column": 32,
+            "row": 9
+          },
+          "location": {
+            "column": 1,
+            "row": 9
+          }
+        }
+      ],
+      "message": "Remove unused import"
+    },
+    "location": {
+      "column": 11,
+      "row": 9
+    },
+    "message": "`time` imported but unused",
+    "noqa_row": 9,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 22,
+      "row": 9
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/analyze_tests.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "import os,re,glob,yaml",
+          "end_location": {
+            "column": 32,
+            "row": 9
+          },
+          "location": {
+            "column": 1,
+            "row": 9
+          }
+        }
+      ],
+      "message": "Remove unused import"
+    },
+    "location": {
+      "column": 19,
+      "row": 9
+    },
+    "message": "`sys` imported but unused",
+    "noqa_row": 9,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 20,
+      "row": 17
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/analyze_tests.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "",
+          "end_location": {
+            "column": 1,
+            "row": 18
+          },
+          "location": {
+            "column": 1,
+            "row": 17
+          }
+        }
+      ],
+      "message": "Remove unused import: `import_ipynb`"
+    },
+    "location": {
+      "column": 8,
+      "row": 17
+    },
+    "message": "`import_ipynb` imported but unused",
+    "noqa_row": 17,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 18,
+      "row": 84
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/analyze_tests.py",
+    "fix": null,
+    "location": {
+      "column": 17,
+      "row": 84
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 84,
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 20,
+      "row": 178
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/analyze_tests.py",
+    "fix": null,
+    "location": {
+      "column": 19,
+      "row": 178
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 178,
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 33,
+      "row": 179
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/analyze_tests.py",
+    "fix": null,
+    "location": {
+      "column": 32,
+      "row": 179
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 179,
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 15,
+      "row": 187
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/analyze_tests.py",
+    "fix": null,
+    "location": {
+      "column": 14,
+      "row": 187
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 187,
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E741",
+    "end_location": {
+      "column": 41,
+      "row": 220
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/analyze_tests.py",
+    "fix": null,
+    "location": {
+      "column": 40,
+      "row": 220
+    },
+    "message": "Ambiguous variable name: `l`",
+    "noqa_row": 220,
+    "url": "https://docs.astral.sh/ruff/rules/ambiguous-variable-name"
+  },
+  {
+    "cell": null,
+    "code": "F841",
+    "end_location": {
+      "column": 10,
+      "row": 221
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/analyze_tests.py",
+    "fix": {
+      "applicability": "unsafe",
+      "edits": [
+        {
+          "content": "",
+          "end_location": {
+            "column": 11,
+            "row": 221
+          },
+          "location": {
+            "column": 9,
+            "row": 221
+          }
+        }
+      ],
+      "message": "Remove assignment to unused variable `n`"
+    },
+    "location": {
+      "column": 9,
+      "row": 221
+    },
+    "message": "Local variable `n` is assigned to but never used",
+    "noqa_row": 221,
+    "url": "https://docs.astral.sh/ruff/rules/unused-variable"
+  },
+  {
+    "cell": null,
+    "code": "E741",
+    "end_location": {
+      "column": 19,
+      "row": 263
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/analyze_tests.py",
+    "fix": null,
+    "location": {
+      "column": 18,
+      "row": 263
+    },
+    "message": "Ambiguous variable name: `l`",
+    "noqa_row": 263,
+    "url": "https://docs.astral.sh/ruff/rules/ambiguous-variable-name"
+  },
+  {
+    "cell": null,
+    "code": "E713",
+    "end_location": {
+      "column": 29,
+      "row": 269
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/analyze_tests.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "el not in ret",
+          "end_location": {
+            "column": 29,
+            "row": 269
+          },
+          "location": {
+            "column": 16,
+            "row": 269
+          }
+        }
+      ],
+      "message": "Convert to `not in`"
+    },
+    "location": {
+      "column": 20,
+      "row": 269
+    },
+    "message": "Test for membership should be `not in`",
+    "noqa_row": 269,
+    "url": "https://docs.astral.sh/ruff/rules/not-in-test"
+  },
+  {
+    "cell": null,
+    "code": "E741",
+    "end_location": {
+      "column": 6,
+      "row": 289
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/analyze_tests.py",
+    "fix": null,
+    "location": {
+      "column": 5,
+      "row": 289
+    },
+    "message": "Ambiguous variable name: `l`",
+    "noqa_row": 289,
+    "url": "https://docs.astral.sh/ruff/rules/ambiguous-variable-name"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 19,
+      "row": 308
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/analyze_tests.py",
+    "fix": null,
+    "location": {
+      "column": 18,
+      "row": 308
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 308,
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "F841",
+    "end_location": {
+      "column": 10,
+      "row": 326
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/analyze_tests.py",
+    "fix": {
+      "applicability": "unsafe",
+      "edits": [
+        {
+          "content": "_m",
+          "end_location": {
+            "column": 10,
+            "row": 326
+          },
+          "location": {
+            "column": 9,
+            "row": 326
+          }
+        }
+      ],
+      "message": "Remove assignment to unused variable `m`"
+    },
+    "location": {
+      "column": 9,
+      "row": 326
+    },
+    "message": "Local variable `m` is assigned to but never used",
+    "noqa_row": 326,
+    "url": "https://docs.astral.sh/ruff/rules/unused-variable"
+  },
+  {
+    "cell": null,
+    "code": "F841",
+    "end_location": {
+      "column": 10,
+      "row": 338
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/analyze_tests.py",
+    "fix": {
+      "applicability": "unsafe",
+      "edits": [
+        {
+          "content": "_m",
+          "end_location": {
+            "column": 10,
+            "row": 338
+          },
+          "location": {
+            "column": 9,
+            "row": 338
+          }
+        }
+      ],
+      "message": "Remove assignment to unused variable `m`"
+    },
+    "location": {
+      "column": 9,
+      "row": 338
+    },
+    "message": "Local variable `m` is assigned to but never used",
+    "noqa_row": 338,
+    "url": "https://docs.astral.sh/ruff/rules/unused-variable"
+  },
+  {
+    "cell": null,
+    "code": "F541",
+    "end_location": {
+      "column": 85,
+      "row": 422
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/analyze_tests.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "'test objects not found, abandoning detailed statistics printout'",
+          "end_location": {
+            "column": 85,
+            "row": 422
+          },
+          "location": {
+            "column": 19,
+            "row": 422
+          }
+        }
+      ],
+      "message": "Remove extraneous `f` prefix"
+    },
+    "location": {
+      "column": 19,
+      "row": 422
+    },
+    "message": "f-string without any placeholders",
+    "noqa_row": 422,
+    "url": "https://docs.astral.sh/ruff/rules/f-string-missing-placeholders"
+  },
+  {
+    "cell": null,
+    "code": "F541",
+    "end_location": {
+      "column": 89,
+      "row": 428
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/analyze_tests.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "'error reading test objects, abandoning detailed statistics printout'",
+          "end_location": {
+            "column": 89,
+            "row": 428
+          },
+          "location": {
+            "column": 19,
+            "row": 428
+          }
+        }
+      ],
+      "message": "Remove extraneous `f` prefix"
+    },
+    "location": {
+      "column": 19,
+      "row": 428
+    },
+    "message": "f-string without any placeholders",
+    "noqa_row": 428,
+    "url": "https://docs.astral.sh/ruff/rules/f-string-missing-placeholders"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 25,
+      "row": 4
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/cli.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "",
+          "end_location": {
+            "column": 1,
+            "row": 5
+          },
+          "location": {
+            "column": 1,
+            "row": 4
+          }
+        }
+      ],
+      "message": "Remove unused import: `pathlib.Path`"
+    },
+    "location": {
+      "column": 21,
+      "row": 4
+    },
+    "message": "`pathlib.Path` imported but unused",
+    "noqa_row": 4,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 11,
+      "row": 2
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/core.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "",
+          "end_location": {
+            "column": 1,
+            "row": 3
+          },
+          "location": {
+            "column": 1,
+            "row": 2
+          }
+        }
+      ],
+      "message": "Remove unused import: `sys`"
+    },
+    "location": {
+      "column": 8,
+      "row": 2
+    },
+    "message": "`sys` imported but unused",
+    "noqa_row": 2,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 12,
+      "row": 4
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/core.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "",
+          "end_location": {
+            "column": 1,
+            "row": 5
+          },
+          "location": {
+            "column": 1,
+            "row": 4
+          }
+        }
+      ],
+      "message": "Remove unused import: `glob`"
+    },
+    "location": {
+      "column": 8,
+      "row": 4
+    },
+    "message": "`glob` imported but unused",
+    "noqa_row": 4,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 11,
+      "row": 5
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/core.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "",
+          "end_location": {
+            "column": 1,
+            "row": 6
+          },
+          "location": {
+            "column": 1,
+            "row": 5
+          }
+        }
+      ],
+      "message": "Remove unused import: `ast`"
+    },
+    "location": {
+      "column": 8,
+      "row": 5
+    },
+    "message": "`ast` imported but unused",
+    "noqa_row": 5,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 25,
+      "row": 6
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/core.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "",
+          "end_location": {
+            "column": 1,
+            "row": 7
+          },
+          "location": {
+            "column": 1,
+            "row": 6
+          }
+        }
+      ],
+      "message": "Remove unused import: `pathlib.Path`"
+    },
+    "location": {
+      "column": 21,
+      "row": 6
+    },
+    "message": "`pathlib.Path` imported but unused",
+    "noqa_row": 6,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 28,
+      "row": 8
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/core.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "from typing import Tuple, Any",
+          "end_location": {
+            "column": 46,
+            "row": 8
+          },
+          "location": {
+            "column": 1,
+            "row": 8
+          }
+        }
+      ],
+      "message": "Remove unused import"
+    },
+    "location": {
+      "column": 20,
+      "row": 8
+    },
+    "message": "`typing.Optional` imported but unused",
+    "noqa_row": 8,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 34,
+      "row": 8
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/core.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "from typing import Tuple, Any",
+          "end_location": {
+            "column": 46,
+            "row": 8
+          },
+          "location": {
+            "column": 1,
+            "row": 8
+          }
+        }
+      ],
+      "message": "Remove unused import"
+    },
+    "location": {
+      "column": 30,
+      "row": 8
+    },
+    "message": "`typing.List` imported but unused",
+    "noqa_row": 8,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 13,
+      "row": 54
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/core.py",
+    "fix": null,
+    "location": {
+      "column": 12,
+      "row": 54
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 54,
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 13,
+      "row": 57
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/core.py",
+    "fix": null,
+    "location": {
+      "column": 12,
+      "row": 57
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 57,
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 17,
+      "row": 60
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/core.py",
+    "fix": null,
+    "location": {
+      "column": 16,
+      "row": 60
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 60,
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 13,
+      "row": 62
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/core.py",
+    "fix": null,
+    "location": {
+      "column": 12,
+      "row": 62
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 62,
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 17,
+      "row": 69
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/core.py",
+    "fix": null,
+    "location": {
+      "column": 16,
+      "row": 69
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 69,
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 21,
+      "row": 71
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/core.py",
+    "fix": null,
+    "location": {
+      "column": 20,
+      "row": 71
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 71,
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 22,
+      "row": 73
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/core.py",
+    "fix": null,
+    "location": {
+      "column": 21,
+      "row": 73
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 73,
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 11,
+      "row": 75
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/core.py",
+    "fix": null,
+    "location": {
+      "column": 10,
+      "row": 75
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 75,
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 13,
+      "row": 77
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/core.py",
+    "fix": null,
+    "location": {
+      "column": 12,
+      "row": 77
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 77,
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 17,
+      "row": 80
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/core.py",
+    "fix": null,
+    "location": {
+      "column": 16,
+      "row": 80
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 80,
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 19,
+      "row": 85
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/core.py",
+    "fix": null,
+    "location": {
+      "column": 18,
+      "row": 85
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 85,
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 15,
+      "row": 90
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/core.py",
+    "fix": null,
+    "location": {
+      "column": 14,
+      "row": 90
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 90,
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 19,
+      "row": 110
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/core.py",
+    "fix": null,
+    "location": {
+      "column": 18,
+      "row": 110
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 110,
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 27,
+      "row": 124
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/core.py",
+    "fix": null,
+    "location": {
+      "column": 26,
+      "row": 124
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 124,
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 15,
+      "row": 127
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/core.py",
+    "fix": null,
+    "location": {
+      "column": 14,
+      "row": 127
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 127,
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 15,
+      "row": 129
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/core.py",
+    "fix": null,
+    "location": {
+      "column": 14,
+      "row": 129
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 129,
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 11,
+      "row": 131
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/core.py",
+    "fix": null,
+    "location": {
+      "column": 10,
+      "row": 131
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 131,
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 13,
+      "row": 133
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/core.py",
+    "fix": null,
+    "location": {
+      "column": 12,
+      "row": 133
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 133,
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 13,
+      "row": 136
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/core.py",
+    "fix": null,
+    "location": {
+      "column": 12,
+      "row": 136
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 136,
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 10,
+      "row": 2
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/coverage_analysis.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "",
+          "end_location": {
+            "column": 1,
+            "row": 3
+          },
+          "location": {
+            "column": 1,
+            "row": 2
+          }
+        }
+      ],
+      "message": "Remove unused import: `os`"
+    },
+    "location": {
+      "column": 8,
+      "row": 2
+    },
+    "message": "`os` imported but unused",
+    "noqa_row": 2,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 45,
+      "row": 3
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/coverage_analysis.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "from typing import Any, Dict, List, Set",
+          "end_location": {
+            "column": 57,
+            "row": 3
+          },
+          "location": {
+            "column": 1,
+            "row": 3
+          }
+        }
+      ],
+      "message": "Remove unused import"
+    },
+    "location": {
+      "column": 37,
+      "row": 3
+    },
+    "message": "`typing.Optional` imported but unused",
+    "noqa_row": 3,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 57,
+      "row": 3
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/coverage_analysis.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "from typing import Any, Dict, List, Set",
+          "end_location": {
+            "column": 57,
+            "row": 3
+          },
+          "location": {
+            "column": 1,
+            "row": 3
+          }
+        }
+      ],
+      "message": "Remove unused import"
+    },
+    "location": {
+      "column": 52,
+      "row": 3
+    },
+    "message": "`typing.Tuple` imported but unused",
+    "noqa_row": 3,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 36,
+      "row": 20
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/create_tests_workflow.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "",
+          "end_location": {
+            "column": 1,
+            "row": 21
+          },
+          "location": {
+            "column": 1,
+            "row": 20
+          }
+        }
+      ],
+      "message": "Remove unused import: `ghtest.param_suggestor`"
+    },
+    "location": {
+      "column": 34,
+      "row": 20
+    },
+    "message": "`ghtest.param_suggestor` imported but unused",
+    "noqa_row": 20,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 13,
+      "row": 70
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/create_tests_workflow.py",
+    "fix": null,
+    "location": {
+      "column": 12,
+      "row": 70
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 70,
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 13,
+      "row": 73
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/create_tests_workflow.py",
+    "fix": null,
+    "location": {
+      "column": 12,
+      "row": 73
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 73,
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 17,
+      "row": 76
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/create_tests_workflow.py",
+    "fix": null,
+    "location": {
+      "column": 16,
+      "row": 76
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 76,
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 13,
+      "row": 78
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/create_tests_workflow.py",
+    "fix": null,
+    "location": {
+      "column": 12,
+      "row": 78
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 78,
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 17,
+      "row": 85
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/create_tests_workflow.py",
+    "fix": null,
+    "location": {
+      "column": 16,
+      "row": 85
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 85,
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 21,
+      "row": 87
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/create_tests_workflow.py",
+    "fix": null,
+    "location": {
+      "column": 20,
+      "row": 87
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 87,
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 22,
+      "row": 89
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/create_tests_workflow.py",
+    "fix": null,
+    "location": {
+      "column": 21,
+      "row": 89
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 89,
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 11,
+      "row": 91
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/create_tests_workflow.py",
+    "fix": null,
+    "location": {
+      "column": 10,
+      "row": 91
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 91,
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 13,
+      "row": 93
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/create_tests_workflow.py",
+    "fix": null,
+    "location": {
+      "column": 12,
+      "row": 93
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 93,
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 17,
+      "row": 96
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/create_tests_workflow.py",
+    "fix": null,
+    "location": {
+      "column": 16,
+      "row": 96
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 96,
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 19,
+      "row": 101
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/create_tests_workflow.py",
+    "fix": null,
+    "location": {
+      "column": 18,
+      "row": 101
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 101,
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 15,
+      "row": 107
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/create_tests_workflow.py",
+    "fix": null,
+    "location": {
+      "column": 14,
+      "row": 107
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 107,
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 19,
+      "row": 127
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/create_tests_workflow.py",
+    "fix": null,
+    "location": {
+      "column": 18,
+      "row": 127
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 127,
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 27,
+      "row": 141
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/create_tests_workflow.py",
+    "fix": null,
+    "location": {
+      "column": 26,
+      "row": 141
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 141,
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 15,
+      "row": 144
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/create_tests_workflow.py",
+    "fix": null,
+    "location": {
+      "column": 14,
+      "row": 144
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 144,
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 15,
+      "row": 146
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/create_tests_workflow.py",
+    "fix": null,
+    "location": {
+      "column": 14,
+      "row": 146
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 146,
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 11,
+      "row": 148
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/create_tests_workflow.py",
+    "fix": null,
+    "location": {
+      "column": 10,
+      "row": 148
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 148,
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 13,
+      "row": 150
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/create_tests_workflow.py",
+    "fix": null,
+    "location": {
+      "column": 12,
+      "row": 150
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 150,
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 13,
+      "row": 153
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/create_tests_workflow.py",
+    "fix": null,
+    "location": {
+      "column": 12,
+      "row": 153
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 153,
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 15,
+      "row": 60
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/param_suggestor.py",
+    "fix": null,
+    "location": {
+      "column": 14,
+      "row": 60
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 60,
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 15,
+      "row": 165
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/param_suggestor.py",
+    "fix": null,
+    "location": {
+      "column": 14,
+      "row": 165
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 165,
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "F821",
+    "end_location": {
+      "column": 26,
+      "row": 206
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/param_suggestor.py",
+    "fix": null,
+    "location": {
+      "column": 13,
+      "row": 206
+    },
+    "message": "Undefined name `ParameterInfo`",
+    "noqa_row": 206,
+    "url": "https://docs.astral.sh/ruff/rules/undefined-name"
+  },
+  {
+    "cell": null,
+    "code": "F821",
+    "end_location": {
+      "column": 26,
+      "row": 272
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/param_suggestor.py",
+    "fix": null,
+    "location": {
+      "column": 13,
+      "row": 272
+    },
+    "message": "Undefined name `ParameterInfo`",
+    "noqa_row": 272,
+    "url": "https://docs.astral.sh/ruff/rules/undefined-name"
+  },
+  {
+    "cell": null,
+    "code": "F821",
+    "end_location": {
+      "column": 24,
+      "row": 273
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/param_suggestor.py",
+    "fix": null,
+    "location": {
+      "column": 12,
+      "row": 273
+    },
+    "message": "Undefined name `FunctionInfo`",
+    "noqa_row": 273,
+    "url": "https://docs.astral.sh/ruff/rules/undefined-name"
+  },
+  {
+    "cell": null,
+    "code": "F821",
+    "end_location": {
+      "column": 24,
+      "row": 396
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/param_suggestor.py",
+    "fix": null,
+    "location": {
+      "column": 12,
+      "row": 396
+    },
+    "message": "Undefined name `FunctionInfo`",
+    "noqa_row": 396,
+    "url": "https://docs.astral.sh/ruff/rules/undefined-name"
+  },
+  {
+    "cell": null,
+    "code": "F821",
+    "end_location": {
+      "column": 34,
+      "row": 404
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/param_suggestor.py",
+    "fix": null,
+    "location": {
+      "column": 21,
+      "row": 404
+    },
+    "message": "Undefined name `ParameterInfo`",
+    "noqa_row": 404,
+    "url": "https://docs.astral.sh/ruff/rules/undefined-name"
+  },
+  {
+    "cell": null,
+    "code": "F821",
+    "end_location": {
+      "column": 75,
+      "row": 430
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/param_suggestor.py",
+    "fix": null,
+    "location": {
+      "column": 63,
+      "row": 430
+    },
+    "message": "Undefined name `FunctionInfo`",
+    "noqa_row": 430,
+    "url": "https://docs.astral.sh/ruff/rules/undefined-name"
+  },
+  {
+    "cell": null,
+    "code": "F821",
+    "end_location": {
+      "column": 24,
+      "row": 449
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/param_suggestor.py",
+    "fix": null,
+    "location": {
+      "column": 12,
+      "row": 449
+    },
+    "message": "Undefined name `FunctionInfo`",
+    "noqa_row": 449,
+    "url": "https://docs.astral.sh/ruff/rules/undefined-name"
+  },
+  {
+    "cell": null,
+    "code": "F821",
+    "end_location": {
+      "column": 43,
+      "row": 479
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/param_suggestor.py",
+    "fix": null,
+    "location": {
+      "column": 31,
+      "row": 479
+    },
+    "message": "Undefined name `FunctionInfo`",
+    "noqa_row": 479,
+    "url": "https://docs.astral.sh/ruff/rules/undefined-name"
+  },
+  {
+    "cell": null,
+    "code": "F821",
+    "end_location": {
+      "column": 24,
+      "row": 615
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/param_suggestor.py",
+    "fix": null,
+    "location": {
+      "column": 12,
+      "row": 615
+    },
+    "message": "Undefined name `FunctionInfo`",
+    "noqa_row": 615,
+    "url": "https://docs.astral.sh/ruff/rules/undefined-name"
+  },
+  {
+    "cell": null,
+    "code": "F821",
+    "end_location": {
+      "column": 29,
+      "row": 616
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/param_suggestor.py",
+    "fix": null,
+    "location": {
+      "column": 17,
+      "row": 616
+    },
+    "message": "Undefined name `FunctionInfo`",
+    "noqa_row": 616,
+    "url": "https://docs.astral.sh/ruff/rules/undefined-name"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 15,
+      "row": 628
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/param_suggestor.py",
+    "fix": null,
+    "location": {
+      "column": 14,
+      "row": 628
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 628,
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "F821",
+    "end_location": {
+      "column": 61,
+      "row": 628
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/param_suggestor.py",
+    "fix": null,
+    "location": {
+      "column": 53,
+      "row": 628
+    },
+    "message": "Undefined name `filepath`",
+    "noqa_row": 628,
+    "url": "https://docs.astral.sh/ruff/rules/undefined-name"
+  },
+  {
+    "cell": null,
+    "code": "F821",
+    "end_location": {
+      "column": 44,
+      "row": 675
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/param_suggestor.py",
+    "fix": null,
+    "location": {
+      "column": 32,
+      "row": 675
+    },
+    "message": "Undefined name `params_index`",
+    "noqa_row": 675,
+    "url": "https://docs.astral.sh/ruff/rules/undefined-name"
+  },
+  {
+    "cell": null,
+    "code": "F821",
+    "end_location": {
+      "column": 24,
+      "row": 694
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/param_suggestor.py",
+    "fix": null,
+    "location": {
+      "column": 12,
+      "row": 694
+    },
+    "message": "Undefined name `FunctionInfo`",
+    "noqa_row": 694,
+    "url": "https://docs.astral.sh/ruff/rules/undefined-name"
+  },
+  {
+    "cell": null,
+    "code": "F821",
+    "end_location": {
+      "column": 35,
+      "row": 695
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/param_suggestor.py",
+    "fix": null,
+    "location": {
+      "column": 23,
+      "row": 695
+    },
+    "message": "Undefined name `FunctionInfo`",
+    "noqa_row": 695,
+    "url": "https://docs.astral.sh/ruff/rules/undefined-name"
+  },
+  {
+    "cell": null,
+    "code": "F821",
+    "end_location": {
+      "column": 24,
+      "row": 746
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/param_suggestor.py",
+    "fix": null,
+    "location": {
+      "column": 12,
+      "row": 746
+    },
+    "message": "Undefined name `FunctionInfo`",
+    "noqa_row": 746,
+    "url": "https://docs.astral.sh/ruff/rules/undefined-name"
+  },
+  {
+    "cell": null,
+    "code": "F821",
+    "end_location": {
+      "column": 48,
+      "row": 747
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/param_suggestor.py",
+    "fix": null,
+    "location": {
+      "column": 36,
+      "row": 747
+    },
+    "message": "Undefined name `FunctionInfo`",
+    "noqa_row": 747,
+    "url": "https://docs.astral.sh/ruff/rules/undefined-name"
+  },
+  {
+    "cell": null,
+    "code": "F821",
+    "end_location": {
+      "column": 34,
+      "row": 762
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/param_suggestor.py",
+    "fix": null,
+    "location": {
+      "column": 21,
+      "row": 762
+    },
+    "message": "Undefined name `ParameterInfo`",
+    "noqa_row": 762,
+    "url": "https://docs.astral.sh/ruff/rules/undefined-name"
+  },
+  {
+    "cell": null,
+    "code": "F821",
+    "end_location": {
+      "column": 34,
+      "row": 763
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/param_suggestor.py",
+    "fix": null,
+    "location": {
+      "column": 21,
+      "row": 763
+    },
+    "message": "Undefined name `ParameterInfo`",
+    "noqa_row": 763,
+    "url": "https://docs.astral.sh/ruff/rules/undefined-name"
+  },
+  {
+    "cell": null,
+    "code": "F821",
+    "end_location": {
+      "column": 54,
+      "row": 939
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/param_suggestor.py",
+    "fix": null,
+    "location": {
+      "column": 41,
+      "row": 939
+    },
+    "message": "Undefined name `ParameterInfo`",
+    "noqa_row": 939,
+    "url": "https://docs.astral.sh/ruff/rules/undefined-name"
+  },
+  {
+    "cell": null,
+    "code": "F821",
+    "end_location": {
+      "column": 42,
+      "row": 1159
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/param_suggestor.py",
+    "fix": null,
+    "location": {
+      "column": 30,
+      "row": 1159
+    },
+    "message": "Undefined name `FunctionInfo`",
+    "noqa_row": 1159,
+    "url": "https://docs.astral.sh/ruff/rules/undefined-name"
+  },
+  {
+    "cell": null,
+    "code": "F821",
+    "end_location": {
+      "column": 47,
+      "row": 1172
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/param_suggestor.py",
+    "fix": null,
+    "location": {
+      "column": 35,
+      "row": 1172
+    },
+    "message": "Undefined name `FunctionInfo`",
+    "noqa_row": 1172,
+    "url": "https://docs.astral.sh/ruff/rules/undefined-name"
+  },
+  {
+    "cell": null,
+    "code": "F821",
+    "end_location": {
+      "column": 24,
+      "row": 1214
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/param_suggestor.py",
+    "fix": null,
+    "location": {
+      "column": 12,
+      "row": 1214
+    },
+    "message": "Undefined name `FunctionInfo`",
+    "noqa_row": 1214,
+    "url": "https://docs.astral.sh/ruff/rules/undefined-name"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 25,
+      "row": 33
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/tests_creator.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "from test_utils import (  # type: ignore\n        CaseTestResult,\n        RunTestWithCassette,\n        call_with_capture,\n        import_function,\n    )",
+          "end_location": {
+            "column": 6,
+            "row": 35
+          },
+          "location": {
+            "column": 5,
+            "row": 29
+          }
+        }
+      ],
+      "message": "Remove unused import: `test_utils.execute_function`"
+    },
+    "location": {
+      "column": 9,
+      "row": 33
+    },
+    "message": "`test_utils.execute_function` imported but unused",
+    "noqa_row": 33,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "F841",
+    "end_location": {
+      "column": 22,
+      "row": 340
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/tests_creator.py",
+    "fix": {
+      "applicability": "unsafe",
+      "edits": [
+        {
+          "content": "pass",
+          "end_location": {
+            "column": 28,
+            "row": 340
+          },
+          "location": {
+            "column": 9,
+            "row": 340
+          }
+        }
+      ],
+      "message": "Remove assignment to unused variable `pending_error`"
+    },
+    "location": {
+      "column": 9,
+      "row": 340
+    },
+    "message": "Local variable `pending_error` is assigned to but never used",
+    "noqa_row": 340,
+    "url": "https://docs.astral.sh/ruff/rules/unused-variable"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 11,
+      "row": 9
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/tests_writer.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "",
+          "end_location": {
+            "column": 1,
+            "row": 10
+          },
+          "location": {
+            "column": 1,
+            "row": 9
+          }
+        }
+      ],
+      "message": "Remove unused import: `vcr`"
+    },
+    "location": {
+      "column": 8,
+      "row": 9
+    },
+    "message": "`vcr` imported but unused",
+    "noqa_row": 9,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 29,
+      "row": 12
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/tests_writer.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "from typing import Any, List, Sequence, Tuple, Literal",
+          "end_location": {
+            "column": 71,
+            "row": 12
+          },
+          "location": {
+            "column": 1,
+            "row": 12
+          }
+        }
+      ],
+      "message": "Remove unused import"
+    },
+    "location": {
+      "column": 25,
+      "row": 12
+    },
+    "message": "`typing.Dict` imported but unused",
+    "noqa_row": 12,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 45,
+      "row": 12
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/tests_writer.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "from typing import Any, List, Sequence, Tuple, Literal",
+          "end_location": {
+            "column": 71,
+            "row": 12
+          },
+          "location": {
+            "column": 1,
+            "row": 12
+          }
+        }
+      ],
+      "message": "Remove unused import"
+    },
+    "location": {
+      "column": 37,
+      "row": 12
+    },
+    "message": "`typing.Optional` imported but unused",
+    "noqa_row": 12,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 40,
+      "row": 14
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/tests_writer.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "from .tests_creator import ScenarioStep, SuggestedFunctionTests",
+          "end_location": {
+            "column": 78,
+            "row": 14
+          },
+          "location": {
+            "column": 1,
+            "row": 14
+          }
+        }
+      ],
+      "message": "Remove unused import: `.tests_creator.CrudScenario`"
+    },
+    "location": {
+      "column": 28,
+      "row": 14
+    },
+    "message": "`.tests_creator.CrudScenario` imported but unused",
+    "noqa_row": 14,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 83,
+      "row": 15
+    },
+    "filename": "/home/runner/work/ghtest/ghtest/src/ghtest/tests_writer.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "from .test_utils import CaseTestResult, RunTestWithCassette",
+          "end_location": {
+            "column": 83,
+            "row": 15
+          },
+          "location": {
+            "column": 1,
+            "row": 15
+          }
+        }
+      ],
+      "message": "Remove unused import: `.test_utils.assert_return_summary`"
+    },
+    "location": {
+      "column": 62,
+      "row": 15
+    },
+    "message": "`.test_utils.assert_return_summary` imported but unused",
+    "noqa_row": 15,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  }
+]
