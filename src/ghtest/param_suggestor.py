@@ -10,6 +10,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
+from .coverage_analysis import analyze_file_coverage
 
 VERBOSITY_PARAM_TOKENS = ("verbose", "verbosity", "vb", "print", "show")
 _PARAM_HISTORY_ENV = "GHTEST_PARAM_HISTORY"
@@ -355,7 +356,7 @@ def _guess_example_value(
         return _finish(value)
 
     if ann in {"int", "builtins.int"} or \
-       any(k in name for k in ["count", "num", "size", "length", "index"]) or \
+       any(k in name for k in ["count", "num", "size", "length", "index", "max"]) or \
        name in {"n", "i", "j", "k"}:
         value = default_value if isinstance(default_value, int) else 1
         return _finish(value)
@@ -384,7 +385,10 @@ def _guess_example_value(
         value = "example.txt"
         return _finish(value)
 
-    value = default_value if isinstance(default_value, str) else "example"
+    if default_value is not None:
+        return _finish(default_value)
+
+    value = "example"
     return _finish(value)
 
 
@@ -431,6 +435,8 @@ def _apply_resource_identifier(kwargs: Dict[str, Any], func: "FunctionInfo", ide
         lower = pname.lower()
         if pname in kwargs:
             continue
+        if any(pname.startswith(prefix) for prefix in ("max_", "min_", "num_", "count_")):
+            continue
         if lower in candidate_names or (resource_lower and resource_lower in lower):
             kwargs[pname] = identifier
     for key in list(kwargs.keys()):
@@ -457,9 +463,14 @@ def _build_crud_scenario(
         None,
     )
     read_func = next(
-        (f for f in peers if f.crud_resource == func.crud_resource and f.crud_role in {"read", "list"}),
+        (f for f in peers if f.crud_resource == func.crud_resource and f.crud_role == "read"),
         None,
     )
+    if not read_func:
+        read_func = next(
+            (f for f in peers if f.crud_resource == func.crud_resource and f.crud_role == "list"),
+            None,
+        )
     if not delete_func or not read_func:
         return None
 
@@ -736,6 +747,7 @@ def suggest_params(
     test_functions: Optional[List["FunctionInfo"]] = None,
     *,
     literal_only: bool = False,
+    coverage_data: Optional[Any] = None,
 ) -> SuggestedFunctionTests:
     """
     Suggest parameter sets for tests of a single FunctionInfo.
@@ -885,7 +897,7 @@ def suggest_params(
                 _record(call_kwargs)
 
     if not literal_only:
-        branch_calls = _build_branch_param_sets(func, minimal)
+        branch_calls = _build_branch_param_sets(func, minimal, coverage_data=coverage_data)
         for call_kwargs in branch_calls:
             param_sets.append(call_kwargs)
             _record(call_kwargs)
@@ -1198,18 +1210,76 @@ class _BranchHint:
     value: Any
 
 
-def _build_branch_param_sets(func: "FunctionInfo", base_kwargs: Dict[str, Any]) -> List[Dict[str, Any]]:
+def _build_branch_param_sets(
+    func: "FunctionInfo",
+    base_kwargs: Dict[str, Any],
+    coverage_data: Optional[Any] = None,
+) -> List[Dict[str, Any]]:
     node = _load_function_node(func.filepath, func.qualname)
     if node is None:
         return []
     param_names = {p.name for p in func.parameters}
     if not param_names:
         return []
+    param_map = {p.name: p for p in func.parameters}
     collector = _BranchHintCollector(param_names, root=node)
     collector.visit(node)
+    
+    missed_branches = []
+    if coverage_data and func.filepath:
+        missed_branches = analyze_file_coverage(func.filepath, coverage_data)
+    
     branch_calls: List[Dict[str, Any]] = []
+    
+    # Process coverage-based hints first if available
+    if missed_branches:
+        for missed in missed_branches:
+            # Find hints that match the missed condition
+            # This is a bit tricky because we need to map the AST condition back to parameters.
+            # We can reuse _BranchHintCollector logic on the specific condition node.
+            condition_collector = _BranchHintCollector(param_names, root=missed['condition'])
+            # We need to visit the condition expression, not the whole function
+            condition_collector._analyze_expr(missed['condition'])
+            
+            for hint in condition_collector.hints:
+                # Filter hints to match the 'needed' outcome (True/False)
+                # If needed is True, we want values that make the condition True.
+                # If needed is False, we want values that make the condition False.
+                
+                # _branch_hint_candidate_values returns values for specific kinds (truthy, falsy, eq, etc.)
+                # We need to align the hint kind with the needed outcome.
+                
+                # If hint.kind is 'truthy' and needed is True -> use truthy values
+                # If hint.kind is 'truthy' and needed is False -> use falsy values (which are NOT returned by _branch_hint_candidate_values for 'truthy' kind directly?)
+                # Wait, _branch_hint_candidate_values returns [True, False] for truthy kind.
+                # So we just need to pick the right one.
+                
+                values = _branch_hint_candidate_values(hint, param_map)
+                
+                # Filter values based on 'needed'
+                targeted_values = []
+                for val in values:
+                    # This is a heuristic check. Ideally we'd evaluate the condition with the value.
+                    # But we can assume:
+                    # - if needed=True, we want the "primary" value for the hint kind
+                    # - if needed=False, we want the "alternative" value
+                    
+                    # Actually, let's just add all of them. The goal is to cover the branch.
+                    # If we missed the branch, it means we probably didn't have a test case that exercised it.
+                    # So adding *both* truthy and falsy values for the condition is a good strategy.
+                    targeted_values.append(val)
+
+                for candidate in targeted_values:
+                    if candidate is _MISSING_LITERAL:
+                        continue
+                    kwargs = dict(base_kwargs)
+                    kwargs[hint.param] = candidate
+                    branch_calls.append(kwargs)
+
+    # Always include static analysis of all branches to ensure baseline coverage
+    # (Targeted hints are added above)
     for hint in collector.hints:
-        values = _branch_hint_candidate_values(hint)
+        values = _branch_hint_candidate_values(hint, param_map)
         for candidate in values:
             if candidate is _MISSING_LITERAL:
                 continue
@@ -1403,11 +1473,44 @@ def _hashable_value(value: Any) -> Any:
     return value
 
 
-def _branch_hint_candidate_values(hint: _BranchHint) -> List[Any]:
+def _branch_hint_candidate_values(hint: _BranchHint, param_map: Dict[str, Any]) -> List[Any]:
+    param_info = param_map.get(hint.param)
+    is_bool = False
+    truthy_value = "example"
+    falsy_value = None
+
+    if param_info:
+        name = param_info.name.lower()
+        ann = (param_info.annotation or "").lower()
+        default_value = getattr(param_info, "default_value", None)
+
+        if ann in {"bool", "builtins.bool", "typing.bool"} or \
+           name.startswith("is_") or name.startswith("has_") or name.endswith("_flag") or \
+           isinstance(default_value, bool):
+            is_bool = True
+
+        if not is_bool:
+            if ann in {"int", "builtins.int"}:
+                truthy_value = 1
+                falsy_value = 0
+            elif ann in {"float", "builtins.float"}:
+                truthy_value = 1.0
+                falsy_value = 0.0
+            elif ann in {"list", "builtins.list", "typing.list"}:
+                truthy_value = ["example"]
+                falsy_value = []
+            elif ann in {"dict", "builtins.dict", "typing.dict"}:
+                truthy_value = {"key": "value"}
+                falsy_value = {}
+
     if hint.kind == "truthy":
-        return [True, False]
+        if is_bool:
+            return [True, False]
+        return [truthy_value]
     if hint.kind == "falsy":
-        return [False, True]
+        if is_bool:
+            return [False, True]
+        return [falsy_value]
     if hint.kind == "eq":
         alt = _branch_alt_value(hint.value)
         values = [hint.value]

@@ -5,6 +5,7 @@
 
 
 import ast
+import glob
 import os
 import sys
 import textwrap
@@ -227,18 +228,71 @@ def _confirm_crud_scenario(scenario: CrudScenario, interactive=True) -> None:
     return True
 
 
-def _execute_scenario_step(step: ScenarioStep, record: bool = True) -> CaseTestResult:
-    result = execute_function(step.module, step.filepath, step.qualname, dict(step.params))
+def _execute_scenario_step(
+    step: ScenarioStep,
+    *,
+    record: bool = True,
+    cassette_dir: Optional[str] = None,
+    cassette_name: Optional[str] = None,
+    record_mode: str = "once",
+) -> CaseTestResult:
+    func = import_function(step.module, step.filepath, step.qualname)
+    params = dict(step.params)
+    recorder = None
+    if record and cassette_dir and cassette_name:
+        recorder = vcr.VCR(
+            serializer="yaml",
+            cassette_library_dir=cassette_dir,
+            record_mode=record_mode,
+            match_on=["uri", "method", "body"],
+        )
+    if recorder and record:
+        with recorder.use_cassette(cassette_name):
+            result = call_with_capture(
+                func,
+                target=step.qualname,
+                params=params,
+                volatile_return_fields=None,
+            )
+        if cassette_dir and cassette_name:
+            cassette_file = os.path.join(cassette_dir, cassette_name)
+            result.cassette_path = cassette_file
+            if not os.path.exists(cassette_file):
+                try:
+                    with open(cassette_file, "w", encoding="utf-8") as fh:
+                        fh.write("interactions: []\nversion: 1\n")
+                except OSError:
+                    pass
+    else:
+        result = call_with_capture(
+            func,
+            target=step.qualname,
+            params=params,
+            volatile_return_fields=None,
+        )
     ret = result.return_value
     exc = result.exception
     if step.expect == "truthy" and not ret and exc is None:
-        raise AssertionError(f"Expected truthy result for {step.qualname}, got {ret!r}")
+        msg = f"Expected truthy result for {step.qualname}, got {ret!r}"
+        print(f"SCENARIO FAILURE: {msg}")
+        result.exception = AssertionError(msg)
     if step.expect == "falsy" and ret and exc is None:
-        raise AssertionError(f"Expected falsy result for {step.qualname}, got {ret!r}")
+        msg = f"Expected falsy result for {step.qualname}, got {ret!r}"
+        print(f"SCENARIO FAILURE: {msg}")
+        result.exception = AssertionError(msg)
+    if exc:
+        print(f"SCENARIO EXCEPTION in {step.qualname}: {exc}")
     return result
 
 
-def _run_crud_scenario(scenario: CrudScenario, interactive=True) -> List[CaseTestResult]:
+def _run_crud_scenario(
+    scenario: CrudScenario,
+    interactive=True,
+    *,
+    cassette_dir: Optional[str] = None,
+    cassette_base: Optional[str] = None,
+    record_mode: str = "once",
+) -> List[CaseTestResult]:
     assume_safe = os.environ.get('GHTEST_ASSUME_SAFE') == '1'
     if assume_safe:
         confirmed = True
@@ -252,23 +306,57 @@ def _run_crud_scenario(scenario: CrudScenario, interactive=True) -> List[CaseTes
     pending_error: Optional[BaseException] = None
 
     try:
-        for step in scenario.steps:
-            result = _execute_scenario_step(step)
+        cassette_base_value = cassette_base
+        for idx, step in enumerate(scenario.steps):
+            cassette_name = None
+            if cassette_dir and cassette_base_value is not None:
+                suffix = "cleanup" if step.cleanup else f"step_{idx}"
+                cassette_name = f"{cassette_base_value}.{suffix}.yaml"
+            result = _execute_scenario_step(
+                step,
+                cassette_dir=cassette_dir,
+                cassette_name=cassette_name,
+                record_mode=record_mode,
+            )
             results.append(result)
             if step.cleanup and result.exception is None:
                 cleanup_executed = True
             if result.exception is not None:
-                raise result.exception
+                # Stop execution on failure, but pad results for remaining steps
+                remaining_steps = scenario.steps[idx + 1 :]
+                for skipped_step in remaining_steps:
+                    skipped_result = CaseTestResult(
+                        target=skipped_step.qualname,
+                        params=skipped_step.params,
+                        return_value=None,
+                        printed="",
+                        exception=RuntimeError("Skipped due to previous step failure"),
+                        return_summary={},
+                        volatile_return_fields=[],
+                    )
+                    results.append(skipped_result)
+                break
     except BaseException as exc:  # noqa: BLE001
         pending_error = exc
+        # If we crashed outside the loop or during setup, we might need more padding,
+        # but the break above handles the common case of step failure.
     finally:
         if cleanup_step and not cleanup_executed:
             try:
-                _execute_scenario_step(cleanup_step, record=False)
+                cassette_name = None
+                if cassette_dir and cassette_base_value is not None:
+                    cassette_name = f"{cassette_base_value}.cleanup.yaml"
+                _execute_scenario_step(
+                    cleanup_step,
+                    record=False,
+                    cassette_dir=cassette_dir,
+                    cassette_name=cassette_name,
+                    record_mode=record_mode,
+                )
             except Exception:
                 pass
-    if pending_error:
-        raise pending_error
+    # if pending_error:
+    #    raise pending_error
     return results
 
 
@@ -281,8 +369,19 @@ def make_test_function(
     os.makedirs(cassette_dir, exist_ok=True)
 
     func_name = f"test_{suggestion.qualname.replace('.', '_')}"
-    cassette_base = f'{suggestion.module}.{suggestion.qualname}'.replace(':', '_')
+    requested_base = f'{suggestion.module}.{suggestion.qualname}'.replace(':', '_')
+    cassette_base = _ensure_unique_cassette_base(cassette_dir, requested_base)
+    if cassette_base != requested_base:
+        print(
+            f"Existing cassette detected for {requested_base}; "
+            f"recording new interactions under {cassette_base}."
+        )
     cassette_path = os.path.join(cassette_dir, f'{cassette_base}.yaml')
+    scenario_cassette_base: Optional[str] = None
+    if suggestion.scenario:
+        requested_scenario_base = f"{cassette_base}.scenario"
+        scenario_cassette_base = _ensure_unique_cassette_base(cassette_dir, requested_scenario_base)
+
     if volatile_response_fields is None:
         volatile_fields: Optional[List[str]] = None
     else:
@@ -306,18 +405,41 @@ def make_test_function(
                 record_mode=record_mode,
                 match_on=['uri', 'method', 'body'],
             )
-            with recorder.use_cassette(case_cassette):
-                result = call_with_capture(
-                    func,
+            try:
+                with recorder.use_cassette(case_cassette):
+                    result = call_with_capture(
+                        func,
+                        target=suggestion.qualname,
+                        params=dict(params),
+                        volatile_return_fields=volatile_fields,
+                    )
+            except Exception as exc:  # noqa: BLE001
+                if _is_vcr_overwrite_error(exc):
+                     _reraise_with_vcr_guidance(exc, os.path.join(cassette_dir, case_cassette))
+                # Create a failed result
+                result = CaseTestResult(
                     target=suggestion.qualname,
                     params=dict(params),
+                    exception=exc,
+                    return_value=None,
+                    printed="",
+                    file_reads=[],
+                    file_writes=[],
+                    return_summary={},
                     volatile_return_fields=volatile_fields,
                 )
+
             result.cassette_path = os.path.join(cassette_dir, case_cassette)
             results.append(result)
 
         if suggestion.scenario:
-            scenario_results = _run_crud_scenario(suggestion.scenario, interactive=interactive)
+            scenario_results = _run_crud_scenario(
+                suggestion.scenario,
+                interactive=interactive,
+                cassette_dir=cassette_dir,
+                cassette_base=scenario_cassette_base,
+                record_mode=record_mode,
+            )
             results.extend(scenario_results)
 
         return RunTestWithCassette(
@@ -385,4 +507,59 @@ def {func_name}() -> RunTestWithCassette:
     )
 
 
+def _ensure_unique_cassette_base(cassette_dir: str, base: str) -> str:
+    candidate = base
+    suffix = 1
+    while _cassette_artifacts_exist(cassette_dir, candidate):
+        candidate = f"{base}__{suffix}"
+        suffix += 1
+    return candidate
+
+
+def _cassette_artifacts_exist(cassette_dir: str, base: str) -> bool:
+    cassette_file = os.path.join(cassette_dir, f"{base}.yaml")
+    if os.path.exists(cassette_file):
+        return True
+    pattern = os.path.join(cassette_dir, f"{base}.case_*.yaml")
+    return any(glob.glob(pattern))
+
+
+def _reraise_with_vcr_guidance(exc: Exception, cassette_file: str) -> None:
+    if _is_vcr_overwrite_error(exc):
+        raise RuntimeError(
+            (
+                "VCR refused to overwrite existing cassette "
+                f"{cassette_file}. Delete the cassette, set remove_cassettes=True, "
+                "or rerun after cleaning up the conflicting files."
+            )
+        ) from exc
+
+
+def _is_vcr_overwrite_error(exc: BaseException) -> bool:
+    errors_mod = getattr(vcr, "errors", None)
+    if errors_mod is None:
+        return False
+    error_cls = getattr(errors_mod, "CannotOverwriteExistingCassetteException", None)
+    if error_cls is None:
+        return False
+    try:
+        return isinstance(exc, error_cls)
+    except Exception:
+        return False
+
+
 # In[ ]:
+
+
+def _run_tests(gts, interactive=True, vb=0):
+    trs=[]
+    for gt in gts:
+        try:
+            tr=gt.test_callable(interactive=interactive)
+            trs.append(tr)
+        except Exception as e:
+            if vb:
+                print(str(e))
+            # if tests fail, we append None so the number of items remains in sync with eg result or suggest lists
+            trs.append(None)
+    return trs

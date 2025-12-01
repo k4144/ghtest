@@ -167,6 +167,9 @@ def _detect_crud_role_and_resource(qualname: str) -> Tuple[Optional[str], Option
     skip_words = {"data", "info", "details", "item", "items"}
     resource_tokens = [tok for tok in resource_tokens if tok and tok not in skip_words]
     resource = "_".join(resource_tokens) if resource_tokens else None
+    
+    if resource and resource.endswith("s") and not resource.endswith("ss"):
+        resource = resource[:-1]
 
     return role, resource
 
@@ -688,7 +691,20 @@ def scan_python_functions(root: str) -> List[FunctionInfo]:
     """
     results: List[FunctionInfo] = []
 
-    ignored_dirs = {".ipynb_checkpoints"}
+    ignored_dirs = {
+        ".ipynb_checkpoints",
+        ".git",
+        ".venv",
+        ".uv-cache",
+        "__pycache__",
+        "tests",
+        "testdata_tests",
+        "testdata_tests_repro",
+        "node_modules",
+        "site-packages",
+        "dist",
+        "build",
+    }
 
     for dirpath, dirnames, filenames in os.walk(root):
         dirnames[:] = [
@@ -724,14 +740,25 @@ def scan_python_functions(root: str) -> List[FunctionInfo]:
             class QualnameVisitor(ast.NodeVisitor):
                 def __init__(self) -> None:
                     self.class_stack: List[str] = []
+                    self.function_depth: int = 0
 
                 def visit_ClassDef(self, node: ast.ClassDef) -> None:
+                    # If we are inside a function, this is a local class. Skip it.
+                    if self.function_depth > 0:
+                        self.generic_visit(node)
+                        return
+
                     self.class_stack.append(node.name)
                     self.generic_visit(node)
                     self.class_stack.pop()
 
                 def _handle_function(self, node: ast.AST) -> None:
                     if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                        return
+
+                    # If we are already inside a function, this is a nested function. Skip collecting it.
+                    # But we still need to visit it to find nested classes/functions (though we skip those too).
+                    if self.function_depth > 0:
                         return
 
                     if self.class_stack:
@@ -766,11 +793,15 @@ def scan_python_functions(root: str) -> List[FunctionInfo]:
 
                 def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
                     self._handle_function(node)
+                    self.function_depth += 1
                     self.generic_visit(node)
+                    self.function_depth -= 1
 
                 def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
                     self._handle_function(node)
+                    self.function_depth += 1
                     self.generic_visit(node)
+                    self.function_depth -= 1
 
             QualnameVisitor().visit(tree)
 

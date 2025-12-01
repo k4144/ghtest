@@ -176,7 +176,12 @@ def _classify_mode(mode: str) -> Tuple[bool, bool]:
 def _normalize_path(target: Any) -> Optional[str]:
     if isinstance(target, (str, bytes, os.PathLike)):
         try:
-            return str(Path(target))
+            p = Path(target).resolve()
+            # Try to make it relative to CWD
+            try:
+                return str(p.relative_to(Path.cwd()))
+            except ValueError:
+                return str(p)
         except Exception:
             return str(target)
     return None

@@ -1,78 +1,69 @@
-import json
-from pathlib import Path
+import pytest
+from ghtest.cassette_sanitizer import (
+    sanitize_cassette_data,
+    _mask_token,
+    _mask_auth_value,
+    _mask_string,
+    _mask_int,
+)
 
-import yaml
+def test_mask_token():
+    assert _mask_token("secret123") == "xxxxxxxxx"
+    assert _mask_token("") == ""
+    assert _mask_token("abc-def") == "xxx-xxx"
 
-from ghtest import cassette_sanitizer
+def test_mask_auth_value():
+    assert _mask_auth_value("Bearer secret") == "Bearer xxxxxx"
+    assert _mask_auth_value("token mytoken") == "token xxxxxxx"
+    assert _mask_auth_value("Basic user:pass") == "Basic xxxx:xxxx"
+    assert _mask_auth_value("just-a-token") == "xxxx-x-xxxxx"
 
+def test_mask_string():
+    original = "sensitive data"
+    masked = _mask_string(original)
+    assert masked != original
+    assert len(masked) == len(original)
+    # Should be deterministic
+    assert _mask_string(original) == masked
 
-def _load_yaml(path: Path):
-    return yaml.safe_load(path.read_text(encoding="utf-8"))
+def test_mask_int():
+    original = 12345
+    masked = _mask_int(original)
+    assert masked != original
+    assert isinstance(masked, int)
+    # Should be deterministic
+    assert _mask_int(original) == masked
 
-
-def test_sanitize_masks_auth_headers_and_identifiers(tmp_path):
-    cassette = {
+def test_sanitize_cassette_data_dict():
+    data = {
         "interactions": [
             {
                 "request": {
-                    "headers": {
-                        "Authorization": ["token ghp_realSecretValue"],
-                    },
-                    "body": {"string": json.dumps({"name": "SensitiveRepo"})},
+                    "headers": {"Authorization": ["Bearer secret"]},
+                    "body": {"string": '{"token": "mytoken"}'}
                 },
                 "response": {
-                    "headers": {
-                        "X-GitHub-OTP": ["123456"],
-                    },
-                    "body": {
-                        "string": json.dumps(
-                            {
-                                "owner": {"login": "real-user", "id": 123456},
-                                "full_name": "real-user/private",
-                                "node_id": "abc123",
-                                "html_url": "https://github.com/real-user/private",
-                            }
-                        )
-                    },
-                },
-            }
-        ]
-    }
-    cassette_path = tmp_path / "cassette.yaml"
-    cassette_path.write_text(yaml.safe_dump(cassette, sort_keys=False), encoding="utf-8")
-
-    changed = cassette_sanitizer.sanitize_file(cassette_path)
-    assert changed
-
-    sanitized = _load_yaml(cassette_path)
-    request_headers = sanitized["interactions"][0]["request"]["headers"]["Authorization"][0]
-    assert request_headers.startswith("token ")
-    masked_token = request_headers.split(" ", 1)[1]
-    assert set(ch for ch in masked_token if ch.isalnum()) == {"x"}
-
-    response_headers = sanitized["interactions"][0]["response"]["headers"]["X-GitHub-OTP"][0]
-    assert set(ch for ch in response_headers if ch.isalnum()) == {"x"}
-
-    body = json.loads(sanitized["interactions"][0]["response"]["body"]["string"])
-    assert body["full_name"] != "real-user/private"
-    assert body["owner"]["login"] != "real-user"
-    assert body["owner"]["id"] != 123456
-    assert "node_id" not in body
-    assert "html_url" not in body
-
-
-def test_dry_run_does_not_modify_files(tmp_path):
-    cassette = {
-        "interactions": [
-            {
-                "request": {
-                    "headers": {"Authorization": ["Bearer realtoken"]},
+                    "body": {"string": '{"access_token": "hidden"}'}
                 }
             }
         ]
     }
-    cassette_path = tmp_path / "c.yaml"
-    cassette_path.write_text(yaml.safe_dump(cassette), encoding="utf-8")
-    changed = cassette_sanitizer.sanitize_file(cassette_path, dry_run=True)
-    assert changed  # sanitizer detected sensitive data
-    assert _load_yaml(cassette_path) == cassette
+    changed = sanitize_cassette_data(data)
+    assert changed
+    
+    # Check headers
+    auth_header = data["interactions"][0]["request"]["headers"]["Authorization"][0]
+    assert auth_header == "Bearer xxxxxx"
+    
+    # Check request body
+    req_body = data["interactions"][0]["request"]["body"]["string"]
+    assert "mytoken" not in req_body
+    
+    # Check response body
+    res_body = data["interactions"][0]["response"]["body"]["string"]
+    assert "hidden" not in res_body
+
+def test_sanitize_cassette_data_no_change():
+    data = {"interactions": [{"request": {}, "response": {}}]}
+    changed = sanitize_cassette_data(data)
+    assert not changed

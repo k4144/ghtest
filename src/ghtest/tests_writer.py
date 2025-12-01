@@ -9,7 +9,7 @@ import textwrap
 import vcr
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Literal
 
 from .tests_creator import CrudScenario, ScenarioStep, SuggestedFunctionTests
 from .test_utils import CaseTestResult, RunTestWithCassette, assert_return_summary
@@ -31,6 +31,9 @@ class TestWriterResult:
 class ScenarioDefinition:
     suggestion: SuggestedFunctionTests
     cases: List[Tuple[ScenarioStep, CaseTestResult]]
+
+ExceptionAssertionMode = Literal["message", "type", "presence", "none"]
+_EXCEPTION_ASSERTION_MODES: Tuple[str, ...] = ("message", "type", "presence", "none")
 
 
 class _DataStore:
@@ -70,7 +73,13 @@ def write_test_modules(
     inline_char_limit: int = 160,
     include_scenarios: bool = True,
     include_return_summary: bool = True,
+    exception_assertion: ExceptionAssertionMode = "type",
 ) -> TestWriterResult:
+    if exception_assertion not in _EXCEPTION_ASSERTION_MODES:
+        raise ValueError(
+            f"Invalid exception assertion mode {exception_assertion!r}; "
+            f"expected one of {', '.join(_EXCEPTION_ASSERTION_MODES)}."
+        )
     out_dir = Path(output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     data_dir = out_dir / "data"
@@ -86,7 +95,13 @@ def write_test_modules(
     module_index = 0
     current_cases: List[str] = []
     for case_def in case_defs:
-        test_src = _render_test_function(case_def, data_store, include_return_summary=include_return_summary)
+        test_src = _render_test_function(
+            case_def,
+            data_store,
+            out_dir,
+            include_return_summary=include_return_summary,
+            exception_assertion=exception_assertion,
+        )
         if not test_src:
             continue
         current_cases.append(test_src)
@@ -122,6 +137,7 @@ def write_test_modules(
             data_store,
             scenario_defs,
             include_return_summary=include_return_summary,
+            exception_assertion=exception_assertion,
         )
         data_store.used = False
 
@@ -174,21 +190,27 @@ def _collect_cases(
 def _render_test_function(
     item: Tuple[SuggestedFunctionTests, CaseTestResult, int],
     data_store: _DataStore,
+    out_dir: Path,
     *,
     include_return_summary: bool,
+    exception_assertion: ExceptionAssertionMode,
 ) -> str:
     suggestion, case, case_idx = item
     func_name = _make_test_name(suggestion.qualname, case_idx)
     lines: List[str] = []
     lines.append(f"def {func_name}():")
-    lines.append(f"    func = import_function({suggestion.module!r}, {suggestion.filepath!r}, {suggestion.qualname!r})")
+    
+    filepath_code = _relativize_path_code(suggestion.filepath, out_dir)
+    lines.append(f"    func = import_function({suggestion.module!r}, {filepath_code}, {suggestion.qualname!r})")
+    
     params_literal = _format_literal(case.params)
     lines.append(_format_assignment("params", params_literal))
     volatile_literal = _format_literal(case.volatile_return_fields)
     lines.append(_format_assignment("volatile_fields", volatile_literal))
     cassette_path = getattr(case, "cassette_path", None)
     if cassette_path:
-        lines.append(f"    cassette_path = {cassette_path!r}")
+        cassette_path_code = _relativize_path_code(cassette_path, out_dir)
+        lines.append(f"    cassette_path = {cassette_path_code}")
         lines.append("    vcr_recorder = vcr.VCR(serializer='yaml', match_on=['uri', 'method', 'body'], record_mode='none')")
         lines.append("    with vcr_recorder.use_cassette(cassette_path):")
         lines.append(
@@ -212,11 +234,7 @@ def _render_test_function(
         else:
             lines.append("    assert result.return_value == expected_return")
     else:
-        exc_type = f"{case.exception.__class__.__module__}.{case.exception.__class__.__name__}"
-        message = str(case.exception)
-        lines.append("    assert result.exception is not None")
-        lines.append(f"    assert result.exception.__class__.__module__ + '.' + result.exception.__class__.__name__ == {exc_type!r}")
-        lines.append(f"    assert str(result.exception) == {message!r}")
+        lines.extend(_exception_assertion_lines(case, exception_assertion))
 
     printed_literal, printed_repr = _literal_or_repr(case.printed, data_store, f"{func_name}_stdout")
     lines.append(_format_assignment("expected_output", printed_literal))
@@ -224,10 +242,10 @@ def _render_test_function(
         lines.append("    assert repr(result.printed) == expected_output")
     else:
         lines.append("    assert result.printed == expected_output")
-    reads_literal = data_store.literal(case.file_reads, label=f"{func_name}_reads")
+    reads_literal = _format_file_access_list(case.file_reads, out_dir)
     lines.append(_format_assignment("expected_reads", reads_literal))
     lines.append("    assert result.file_reads == expected_reads")
-    writes_literal = data_store.literal(case.file_writes, label=f"{func_name}_writes")
+    writes_literal = _format_file_access_list(case.file_writes, out_dir)
     lines.append(_format_assignment("expected_writes", writes_literal))
     lines.append("    assert result.file_writes == expected_writes")
     if include_return_summary:
@@ -249,7 +267,7 @@ def _write_module(
 ) -> Path:
     module_name = f"test_generated_{module_index}"
     module_path = output_dir / f"{module_name}.py"
-    header_lines = ["import vcr"]
+    header_lines = ["import vcr", "from pathlib import Path"]
     if include_return_summary:
         header_lines.append("from ghtest.test_utils import assert_return_summary, call_with_capture, import_function")
     else:
@@ -269,10 +287,12 @@ def _write_scenario_modules(
     scenarios: Sequence[ScenarioDefinition],
     *,
     include_return_summary: bool,
+    exception_assertion: ExceptionAssertionMode,
 ) -> List[Path]:
     modules: List[Path] = []
     scenario_dir = output_dir / "scenarios"
     scenario_dir.mkdir(parents=True, exist_ok=True)
+    (scenario_dir / "__init__.py").touch()
 
     for idx, scenario_def in enumerate(scenarios):
         module_path = _write_scenario_module(
@@ -281,6 +301,7 @@ def _write_scenario_modules(
             scenario_def,
             data_store,
             include_return_summary=include_return_summary,
+            exception_assertion=exception_assertion,
         )
         modules.append(module_path)
         data_store.used = False
@@ -295,6 +316,7 @@ def _write_scenario_module(
     data_store: _DataStore,
     *,
     include_return_summary: bool,
+    exception_assertion: ExceptionAssertionMode,
 ) -> Path:
     scenario = definition.suggestion.scenario
     resource = None
@@ -302,7 +324,7 @@ def _write_scenario_module(
         resource = scenario.resource
     safe_resource = "".join(ch if ch.isalnum() else "_" for ch in (resource or definition.suggestion.qualname))
     safe_resource = safe_resource.strip("_") or "scenario"
-    module_name = f"scenario_{safe_resource}_{index}"
+    module_name = f"test_scenario_{safe_resource}_{index}"
     module_path = scenario_dir / f"{module_name}.py"
 
     if include_return_summary:
@@ -313,10 +335,13 @@ def _write_scenario_module(
         f"""\
         import os
         import vcr
+        from pathlib import Path
 
         {header_import}
 
         _SCENARIO_ENV = "GHTEST_RUN_SCENARIOS"
+        _SCENARIO_LIVE_ENV = "GHTEST_SCENARIO_LIVE"
+        _USE_RECORDED_CASSETTES = os.environ.get(_SCENARIO_LIVE_ENV) != '1'
         """
     )
 
@@ -328,11 +353,18 @@ def _write_scenario_module(
         definition,
         data_store,
         index,
+        scenario_dir,
         include_return_summary=include_return_summary,
+        exception_assertion=exception_assertion,
     )
     needs_loader = data_store.used
     if needs_loader:
-        loader = "\n".join(_DATA_LOADER_TEMPLATE).rstrip() + "\n\n"
+        # Scenarios are in a subdir, so data is one level up
+        loader_code = "\n".join(_DATA_LOADER_TEMPLATE).replace(
+            "Path(__file__).with_name('data')",
+            "Path(__file__).parent.parent / 'data'"
+        )
+        loader = loader_code.rstrip() + "\n\n"
     else:
         loader = ""
     content = header.rstrip() + "\n\n" + loader + body
@@ -344,42 +376,46 @@ def _render_scenario_function(
     definition: ScenarioDefinition,
     data_store: _DataStore,
     scenario_index: int,
+    out_dir: Path,
     *,
     include_return_summary: bool,
+    exception_assertion: ExceptionAssertionMode,
 ) -> str:
     scenario = definition.suggestion.scenario
     resource = scenario.resource if scenario else definition.suggestion.qualname
     func_name = _make_test_name(f"{resource}_scenario", scenario_index)
     lines: List[str] = [
         f"def {func_name}():",
-        "    if os.environ.get(_SCENARIO_ENV) != '1':",
-        "        raise RuntimeError('Scenario tests disabled; set GHTEST_RUN_SCENARIOS=1 to execute them.')",
+        "    # Scenario tests are now enabled by default",
+        "    pass",
     ]
 
     for idx, (step, case) in enumerate(definition.cases):
         comment = step.description or f"Step {idx + 1}: {step.qualname}"
         lines.append(f"    # {comment}")
-        lines.append(f"    func = import_function({step.module!r}, {step.filepath!r}, {step.qualname!r})")
+        filepath_code = _relativize_path_code(step.filepath, out_dir)
+        lines.append(f"    func = import_function({step.module!r}, {filepath_code}, {step.qualname!r})")
         params_literal = _format_literal(step.params)
         lines.append(_format_assignment("params", params_literal))
         volatile_literal = _format_literal(case.volatile_return_fields)
         lines.append(_format_assignment("volatile_fields", volatile_literal))
         cassette_path = getattr(case, "cassette_path", None)
+        call_line = "result = call_with_capture(func, target={qual!r}, params=params, volatile_return_fields=volatile_fields)".format(
+            qual=step.qualname
+        )
         if cassette_path:
-            lines.append(f"    cassette_path = {cassette_path!r}")
-            lines.append("    vcr_recorder = vcr.VCR(serializer='yaml', match_on=['uri', 'method', 'body'], record_mode='none')")
-            lines.append("    with vcr_recorder.use_cassette(cassette_path):")
+            cassette_path_code = _relativize_path_code(cassette_path, out_dir)
+            lines.append(f"    cassette_path = {cassette_path_code}")
+            lines.append("    if _USE_RECORDED_CASSETTES:")
             lines.append(
-                "        result = call_with_capture(func, target={qual!r}, params=params, volatile_return_fields=volatile_fields)".format(
-                    qual=step.qualname
-                )
+                "        vcr_recorder = vcr.VCR(serializer='yaml', match_on=['uri', 'method', 'body'], record_mode='none')"
             )
+            lines.append("        with vcr_recorder.use_cassette(cassette_path):")
+            lines.append(f"            {call_line}")
+            lines.append("    else:")
+            lines.append(f"        {call_line}")
         else:
-            lines.append(
-                "    result = call_with_capture(func, target={qual!r}, params=params, volatile_return_fields=volatile_fields)".format(
-                    qual=step.qualname
-                )
-            )
+            lines.append(f"    {call_line}")
 
         if case.exception is None:
             lines.append("    assert result.exception is None")
@@ -394,11 +430,7 @@ def _render_scenario_function(
             else:
                 lines.append("    assert result.return_value == expected_return")
         else:
-            exc_type = f"{case.exception.__class__.__module__}.{case.exception.__class__.__name__}"
-            message = str(case.exception)
-            lines.append("    assert result.exception is not None")
-            lines.append(f"    assert result.exception.__class__.__module__ + '.' + result.exception.__class__.__name__ == {exc_type!r}")
-            lines.append(f"    assert str(result.exception) == {message!r}")
+            lines.extend(_exception_assertion_lines(case, exception_assertion))
 
         printed_literal, printed_repr = _literal_or_repr(
             case.printed,
@@ -410,10 +442,10 @@ def _render_scenario_function(
             lines.append("    assert repr(result.printed) == expected_output")
         else:
             lines.append("    assert result.printed == expected_output")
-        reads_literal = data_store.literal(case.file_reads, label=f"{func_name}_step_{idx}_reads")
+        reads_literal = _format_file_access_list(case.file_reads, out_dir)
         lines.append(_format_assignment("expected_reads", reads_literal))
         lines.append("    assert result.file_reads == expected_reads")
-        writes_literal = data_store.literal(case.file_writes, label=f"{func_name}_step_{idx}_writes")
+        writes_literal = _format_file_access_list(case.file_writes, out_dir)
         lines.append(_format_assignment("expected_writes", writes_literal))
         lines.append("    assert result.file_writes == expected_writes")
         if include_return_summary:
@@ -454,6 +486,30 @@ def _literal_or_repr(value: Any, data_store: _DataStore, label: str) -> Tuple[st
     return data_store.literal(repr(value), label=label), True
 
 
+def _exception_assertion_lines(
+    case: CaseTestResult,
+    mode: ExceptionAssertionMode,
+    *,
+    indent: str = "    ",
+) -> List[str]:
+    if case.exception is None:
+        return [f"{indent}assert result.exception is None"]
+
+    if mode == "none":
+        return []
+
+    lines = [f"{indent}assert result.exception is not None"]
+    if mode in ("message", "type"):
+        exc_type = f"{case.exception.__class__.__module__}.{case.exception.__class__.__name__}"
+        lines.append(
+            f"{indent}assert result.exception.__class__.__module__ + '.' + result.exception.__class__.__name__ == {exc_type!r}"
+        )
+        if mode == "message":
+            message = str(case.exception)
+            lines.append(f"{indent}assert str(result.exception) == {message!r}")
+    return lines
+
+
 def _is_literal_value(value: Any) -> bool:
     if value is None:
         return True
@@ -479,6 +535,33 @@ _DATA_LOADER_TEMPLATE = [
     "    return module.DATA",
     "",
 ]
+
+
+def _relativize_path_code(path: str, base_dir: Path) -> str:
+    if not path:
+        return repr(path)
+    try:
+        abs_path = Path(path).resolve()
+        if not abs_path.is_absolute():
+             return repr(path)
+        
+        rel_path = os.path.relpath(abs_path, base_dir)
+        # Use forward slashes for consistency in generated code
+        rel_path = rel_path.replace(os.sep, "/")
+        
+        return f"str((Path(__file__).parent / {rel_path!r}).resolve())"
+    except Exception:
+        return repr(path)
+
+
+def _format_file_access_list(access_list: List[Tuple[str, str]], out_dir: Path) -> str:
+    if not access_list:
+        return "[]"
+    items = []
+    for path, mode in access_list:
+        path_code = _relativize_path_code(path, out_dir)
+        items.append(f"({path_code}, {mode!r})")
+    return "[" + ", ".join(items) + "]"
 
 
 __all__ = ["TestArtifact", "write_test_modules"]
