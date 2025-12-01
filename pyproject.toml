@@ -18,3 +18,10 @@ dependencies = [
 
 [project.scripts]
 ghtest = "ghtest.cli:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.coverage.run]
+source = ["src"]
+branch = true

@@ -14,8 +14,8 @@ from collections import defaultdict
 # In[2]:
 
 
-import import_ipynb
-from main import create_tests
+
+from .create_tests_workflow import create_tests
 
 
 # ## constants
