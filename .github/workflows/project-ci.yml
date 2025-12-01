@@ -1,0 +1,17 @@
+name: CI
+
+on: [push, pull_request, workflow_dispatch]
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  ci:
+    uses: .k4144/actions/project-ci/.github/workflows/project-ci.yml
+    with:
+      python-version: "3.11"
+      package-name: "ghtest"
+      publish-on: "main"
+    secrets:
+      pypi-token: ${{ secrets.PYPI_TOKEN }}
