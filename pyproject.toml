@@ -21,7 +21,13 @@ ghtest = "ghtest.cli:main"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+addopts = "--cov=ghtest"
+
 
 [tool.coverage.run]
 source = ["src"]
 branch = true
+
+[tool.coverage.paths]
+source = ["src", "*/site-packages"]
+
