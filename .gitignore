@@ -17,8 +17,7 @@ nohup.out
 .DS_Store
 
 # test data
-testdata
-testdata_tests
+
 #tests/cassettes/*
 .coverage
 

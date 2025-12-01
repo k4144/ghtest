@@ -6,7 +6,13 @@ from ghtest.core import create_tests
 
 def test_create_tests_integration(tmp_path):
     # Setup paths
-    testdata_dir = Path(__file__).parent.parent / "testdata"
+    # Setup paths
+    testdata_dir = tmp_path / "src"
+    testdata_dir.mkdir()
+    (testdata_dir / "sample.py").write_text("""
+def get_commits(name: str, dry_run: bool = False):
+    pass
+""")
     cassette_dir = tmp_path / "cassettes"
     test_out_dir = tmp_path / "tests"
     
@@ -66,7 +72,9 @@ def test_create_tests_integration(tmp_path):
 
 def test_create_tests_no_cleanup(tmp_path):
     # Test with clean_up=False
-    testdata_dir = Path(__file__).parent.parent / "testdata"
+    testdata_dir = tmp_path / "src"
+    testdata_dir.mkdir()
+    (testdata_dir / "sample.py").write_text("def foo(): pass")
     cassette_dir = tmp_path / "cassettes"
     test_out_dir = tmp_path / "tests"
     

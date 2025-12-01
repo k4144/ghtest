@@ -1,0 +1,80 @@
+interactions:
+- request:
+    body: '{"name": "coron6", "description": "simple repo allow_del_by_api=true ",
+      "homepage": "https://github.com/gh4144/coron6", "private": true, "is_template":
+      false}'
+    headers:
+      Accept:
+      - application/vnd.github+json
+      Accept-Encoding:
+      - gzip, deflate
+      Authorization:
+      - token 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
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '158'
+      Content-Type:
+      - application/x-www-form-urlencoded
+      User-Agent:
+      - python-requests/2.32.5
+      X-GitHub-Api-Version:
+      - '2022-11-28'
+    method: POST
+    uri: https://api.github.com/user/repos
+  response:
+    body:
+      string: '{"message":"Repository creation failed.","errors":[{"resource":"Repository","code":"custom","field":"name","message":"name
+        already exists on this account"}],"documentation_url":"https://docs.github.com/rest/repos/repos#create-a-repository-for-the-authenticated-user","status":"422"}'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
+        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
+        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO,
+        X-GitHub-Request-Id, Deprecation, Sunset
+      Content-Length:
+      - '282'
+      Content-Security-Policy:
+      - default-src 'none'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Sun, 30 Nov 2025 18:35:14 GMT
+      Referrer-Policy:
+      - origin-when-cross-origin, strict-origin-when-cross-origin
+      Server:
+      - github.com
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubdomains; preload
+      Vary:
+      - Accept-Encoding, Accept, X-Requested-With
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - deny
+      X-GitHub-Media-Type:
+      - github.v3; format=json
+      X-GitHub-Request-Id:
+      - FCDE:114227:E96B419:DA9C2FF:692C8E62
+      X-RateLimit-Limit:
+      - '5000'
+      X-RateLimit-Remaining:
+      - '3945'
+      X-RateLimit-Reset:
+      - '1764528931'
+      X-RateLimit-Resource:
+      - core
+      X-RateLimit-Used:
+      - '1055'
+      X-XSS-Protection:
+      - '0'
+      x-accepted-github-permissions:
+      - administration=write
+      x-github-api-version-selected:
+      - '2022-11-28'
+    status:
+      code: 422
+      message: Unprocessable Entity
+version: 1
