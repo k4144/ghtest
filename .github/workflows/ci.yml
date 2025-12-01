@@ -10,7 +10,7 @@ jobs:
   ci:
     uses: k4144/actions/.github/workflows/project-ci.yml@main
     with:
-      python-version: "3.11"
+      python-version: "3.13"
       package-name: "ghtest"
       publish-on: "main"
     secrets:
