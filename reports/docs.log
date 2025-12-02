@@ -42,4 +42,6 @@ Writing evaluated template result to /home/runner/work/ghtest/ghtest/docs/_build
 [01mwriting additional pages... [39;49;00msearch done
 [01mdumping search index in English (code: en)... [39;49;00mdone
 [01mdumping object inventory... [39;49;00mdone
-[01mbuild finished with problems, 1 warning (with warnings treated as errors).[39;49;00m
+[01mbuild succeeded, 1 warning.[39;49;00m
+
+The HTML pages are in docs/_build/html.
