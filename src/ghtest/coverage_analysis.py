@@ -1,11 +1,11 @@
 import ast
-import os
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Set
 
 try:
     import coverage
 except ImportError:
     coverage = None
+
 
 class BranchAnalyzer(ast.NodeVisitor):
     def __init__(self, covered_lines: Set[int], missing_lines: Set[int]) -> None:
@@ -24,36 +24,32 @@ class BranchAnalyzer(ast.NodeVisitor):
     def check_branch(self, node: ast.AST) -> None:
         # The line of the 'if' or 'while' statement
         start_line = node.lineno
-        
+
         # If the condition itself wasn't executed, we can't do anything yet (unreachable)
         if start_line not in self.covered_lines:
             return
 
         # Check body coverage
         body_covered = self.is_block_covered(node.body)
-        
+
         # Check orelse coverage
         orelse_covered = False
         if node.orelse:
             orelse_covered = self.is_block_covered(node.orelse)
-        
+
         # We can't easily detect implicit else without CFG, but if body wasn't covered,
         # we definitely took the else path (or crashed).
         # If body WAS covered, we might have missed the else path.
-        
+
         if not body_covered:
-            self.missed_branches.append({
-                "line": start_line,
-                "condition": node.test,
-                "needed": True
-            })
-        
+            self.missed_branches.append(
+                {"line": start_line, "condition": node.test, "needed": True}
+            )
+
         if node.orelse and not orelse_covered:
-             self.missed_branches.append({
-                "line": start_line,
-                "condition": node.test,
-                "needed": False
-            })
+            self.missed_branches.append(
+                {"line": start_line, "condition": node.test, "needed": False}
+            )
 
     def is_block_covered(self, nodes: List[ast.AST]) -> bool:
         """Check if any line in the block was executed."""
@@ -62,6 +58,7 @@ class BranchAnalyzer(ast.NodeVisitor):
                 if node.lineno in self.covered_lines:
                     return True
         return False
+
 
 def analyze_file_coverage(filepath: str, cov_data: Any) -> List[Dict[str, Any]]:
     """
@@ -89,10 +86,10 @@ def analyze_file_coverage(filepath: str, cov_data: Any) -> List[Dict[str, Any]]:
         return []
 
     executable_lines = set(analysis[1])
-    missing_lines = set(analysis[2]) # Index 2 is missing lines
+    missing_lines = set(analysis[2])  # Index 2 is missing lines
     covered_lines = executable_lines - missing_lines
 
     analyzer = BranchAnalyzer(covered_lines, missing_lines)
     analyzer.visit(tree)
-    
+
     return analyzer.missed_branches

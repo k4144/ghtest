@@ -19,7 +19,7 @@ _PARAM_DB_DISABLE_ENV = "GHTEST_DISABLE_PARAM_DB_WRITE"
 _PARAM_HISTORY_CACHE: Optional[Dict[str, List[Any]]] = None
 _PARAM_DB_CACHE: Optional[Dict[str, Dict[str, Any]]] = None
 _LITERAL_ASSIGNMENTS_CACHE: Dict[str, Dict[str, List[Any]]] = {}
-VB=0
+VB = 0
 
 
 @dataclass
@@ -43,9 +43,9 @@ class CrudScenario:
 
 @dataclass
 class SuggestedFunctionTests:
-    module: str              # import path, e.g. "pkg.sub.module"
+    module: str  # import path, e.g. "pkg.sub.module"
     filepath: str
-    qualname: str            # "func", "Class.method", ...
+    qualname: str  # "func", "Class.method", ...
     docstring: Optional[str]
     param_sets: List[Dict[str, Any]]  # each dict is kwargs for a call
     scenario: Optional[CrudScenario] = None
@@ -57,7 +57,8 @@ def _extract_module_globals_from_file(filepath: str) -> Dict[str, Any]:
     to be constants (between the last import and the first def/class).
     """
     try:
-        if VB:print(f'_extract_module_globals: reading {filepath}')
+        if VB:
+            print(f"_extract_module_globals: reading {filepath}")  # noqa: E701
         with open(filepath, "r", encoding="utf-8") as f:
             source = f.read()
     except OSError:
@@ -75,7 +76,9 @@ def _extract_module_globals_from_file(filepath: str) -> Dict[str, Any]:
     for i, node in enumerate(body):
         if isinstance(node, (ast.Import, ast.ImportFrom)):
             last_import_idx = i
-        elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)) and first_def_idx == len(body):
+        elif isinstance(
+            node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)
+        ) and first_def_idx == len(body):
             first_def_idx = i
 
     start = last_import_idx + 1
@@ -155,14 +158,17 @@ class _LiteralAssignmentCollector(ast.NodeVisitor):
             self._add(name, value)
 
 
-def _extract_literal_assignments_from_file(filepath: Optional[str]) -> Dict[str, List[Any]]:
+def _extract_literal_assignments_from_file(
+    filepath: Optional[str],
+) -> Dict[str, List[Any]]:
     if not filepath:
         return {}
     cached = _LITERAL_ASSIGNMENTS_CACHE.get(filepath)
     if cached is not None:
         return cached
     try:
-        if VB:print(f'_extract_literal: reading {filepath}')
+        if VB:
+            print(f"_extract_literal: reading {filepath}")  # noqa: E701
         with open(filepath, "r", encoding="utf-8") as f:
             source = f.read()
     except OSError:
@@ -203,7 +209,7 @@ def _looks_like_env_placeholder(tokens: List[str], pname: str) -> bool:
 
 
 def _choose_global_for_param(
-    param: "ParameterInfo",
+    param: "ParameterInfo",  # noqa: F821
     module_globals: Dict[str, Any],
 ) -> Optional[Any]:
     """
@@ -269,8 +275,8 @@ def _select_preferred_hint(values: Optional[List[Any]]) -> Optional[Any]:
 
 
 def _guess_example_value(
-    param: "ParameterInfo",
-    func: "FunctionInfo",
+    param: "ParameterInfo",  # noqa: F821
+    func: "FunctionInfo",  # noqa: F821
     module_globals: Optional[Dict[str, Any]] = None,
     module_param_values: Optional[Dict[str, List[Any]]] = None,
     literal_assignments: Optional[Dict[str, List[Any]]] = None,
@@ -285,6 +291,7 @@ def _guess_example_value(
     """
     source = "heuristic"
     default_value = getattr(param, "default_value", None)
+
     def _finish(val: Any) -> Any:
         return (val, source) if include_source else val
 
@@ -339,8 +346,12 @@ def _guess_example_value(
         ann = type(default_value).__name__.lower()
     doc = (func.docstring or "").lower()
 
-    if ann in {"bool", "builtins.bool", "typing.bool"} or \
-       name.startswith("is_") or name.startswith("has_") or name.endswith("_flag"):
+    if (
+        ann in {"bool", "builtins.bool", "typing.bool"}
+        or name.startswith("is_")
+        or name.startswith("has_")
+        or name.endswith("_flag")
+    ):
         value = default_value if isinstance(default_value, bool) else True
         return _finish(value)
 
@@ -355,9 +366,11 @@ def _guess_example_value(
         value = "https://example.com"
         return _finish(value)
 
-    if ann in {"int", "builtins.int"} or \
-       any(k in name for k in ["count", "num", "size", "length", "index", "max"]) or \
-       name in {"n", "i", "j", "k"}:
+    if (
+        ann in {"int", "builtins.int"}
+        or any(k in name for k in ["count", "num", "size", "length", "index", "max"])
+        or name in {"n", "i", "j", "k"}
+    ):
         value = default_value if isinstance(default_value, int) else 1
         return _finish(value)
 
@@ -374,10 +387,17 @@ def _guess_example_value(
         return _finish(value)
 
     if "data" in name or "payload" in name or "json" in name:
-        value = default_value if isinstance(default_value, dict) else {"data": "example"}
+        value = (
+            default_value if isinstance(default_value, dict) else {"data": "example"}
+        )
         return _finish(value)
 
-    if ann in {"str", "builtins.str"} or "name" in name or "label" in name or "key" in name:
+    if (
+        ann in {"str", "builtins.str"}
+        or "name" in name
+        or "label" in name
+        or "key" in name
+    ):
         value = default_value if isinstance(default_value, str) else "example"
         return _finish(value)
 
@@ -393,7 +413,7 @@ def _guess_example_value(
 
 
 def _build_minimal_kwargs(
-    func: "FunctionInfo",
+    func: "FunctionInfo",  # noqa: F821
     module_globals: Dict[str, Any],
     module_param_values: Dict[str, List[Any]],
     literal_assignments: Dict[str, List[Any]],
@@ -401,7 +421,7 @@ def _build_minimal_kwargs(
     param_db_values: Dict[str, Dict[str, Any]],
     history_values: Dict[str, List[Any]],
 ) -> Dict[str, Any]:
-    required: List["ParameterInfo"] = []
+    required: List["ParameterInfo"] = []  # noqa: F821
 
     is_method = "." in func.qualname
     for idx, p in enumerate(func.parameters):
@@ -427,7 +447,9 @@ def _build_minimal_kwargs(
     return kwargs
 
 
-def _apply_resource_identifier(kwargs: Dict[str, Any], func: "FunctionInfo", identifier: str) -> None:
+def _apply_resource_identifier(
+    kwargs: Dict[str, Any], func: "FunctionInfo", identifier: str # noqa: F821
+) -> None:  
     candidate_names = {"name", "slug", "repo", "item", "resource", "id"}
     resource_lower = (func.crud_resource or "").lower()
     for p in func.parameters:
@@ -435,7 +457,9 @@ def _apply_resource_identifier(kwargs: Dict[str, Any], func: "FunctionInfo", ide
         lower = pname.lower()
         if pname in kwargs:
             continue
-        if any(pname.startswith(prefix) for prefix in ("max_", "min_", "num_", "count_")):
+        if any(
+            pname.startswith(prefix) for prefix in ("max_", "min_", "num_", "count_")
+        ):
             continue
         if lower in candidate_names or (resource_lower and resource_lower in lower):
             kwargs[pname] = identifier
@@ -446,7 +470,7 @@ def _apply_resource_identifier(kwargs: Dict[str, Any], func: "FunctionInfo", ide
 
 
 def _build_crud_scenario(
-    func: "FunctionInfo",
+    func: "FunctionInfo",  # noqa: F821
     module_globals: Dict[str, Any],
     module_param_values: Dict[str, List[Any]],
     literal_assignments: Dict[str, List[Any]],
@@ -459,16 +483,28 @@ def _build_crud_scenario(
     resource = func.crud_resource or func.qualname.split(".")[-1]
     peers = [f for f in getattr(func, "module_functions", []) if f is not func]
     delete_func = next(
-        (f for f in peers if f.crud_resource == func.crud_resource and f.crud_role == "delete"),
+        (
+            f
+            for f in peers
+            if f.crud_resource == func.crud_resource and f.crud_role == "delete"
+        ),
         None,
     )
     read_func = next(
-        (f for f in peers if f.crud_resource == func.crud_resource and f.crud_role == "read"),
+        (
+            f
+            for f in peers
+            if f.crud_resource == func.crud_resource and f.crud_role == "read"
+        ),
         None,
     )
     if not read_func:
         read_func = next(
-            (f for f in peers if f.crud_resource == func.crud_resource and f.crud_role == "list"),
+            (
+                f
+                for f in peers
+                if f.crud_resource == func.crud_resource and f.crud_role == "list"
+            ),
             None,
         )
     if not delete_func or not read_func:
@@ -476,10 +512,16 @@ def _build_crud_scenario(
 
     identifier = _generate_resource_identifier(resource)
 
-    def build_kwargs(target: "FunctionInfo", overrides: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    def build_kwargs(
+        target: "FunctionInfo", overrides: Optional[Dict[str, Any]] = None # noqa: F821
+    ) -> Dict[str, Any]:  
         target_globals = getattr(target, "module_globals", None) or module_globals
-        target_module_params = getattr(target, "module_param_values", None) or module_param_values
-        target_literals = _extract_literal_assignments_from_file(getattr(target, "filepath", None))
+        target_module_params = (
+            getattr(target, "module_param_values", None) or module_param_values
+        )
+        target_literals = _extract_literal_assignments_from_file(
+            getattr(target, "filepath", None)
+        )
         target_usage = getattr(target, "parameter_usage_values", None) or {}
         kwargs = _build_minimal_kwargs(
             target,
@@ -560,7 +602,9 @@ def _build_crud_scenario(
         )
     )
 
-    note = "Set GHTEST_ASSUME_SAFE=1 to skip confirmations before running this scenario."
+    note = (
+        "Set GHTEST_ASSUME_SAFE=1 to skip confirmations before running this scenario."
+    )
 
     return CrudScenario(
         resource=resource or "resource",
@@ -612,8 +656,8 @@ def _is_call_to_target(call: ast.Call, target_name: str) -> bool:
 
 
 def _extract_param_sets_from_test_function(
-    func: "FunctionInfo",
-    test_func: "FunctionInfo",
+    func: "FunctionInfo",  # noqa: F821
+    test_func: "FunctionInfo",  # noqa: F821
 ) -> List[Dict[str, Any]]:
     """
     From a single test function, extract argument sets for calls to the
@@ -625,7 +669,8 @@ def _extract_param_sets_from_test_function(
         return []
 
     try:
-        if VB:print(f'_extract_param_sets: reading {filepath}')
+        if VB:
+            print(f"_extract_param_sets: reading {test_func.filepath}")  # noqa: E701
         with open(test_func.filepath, "r", encoding="utf-8") as f:
             source = f.read()
     except OSError:
@@ -672,7 +717,7 @@ def _extract_param_sets_from_test_function(
                 param_index = start_index + i
                 if param_index >= len(params):
                     break
-                pname = params[params_index].name
+                pname = params[params_index].name  # noqa: F821
                 value = _safe_literal_eval(arg_node)
                 kwargs[pname] = value
 
@@ -691,8 +736,8 @@ def _extract_param_sets_from_test_function(
 
 
 def _extract_test_param_sets_for_func(
-    func: "FunctionInfo",
-    test_funcs: List["FunctionInfo"],
+    func: "FunctionInfo",  # noqa: F821
+    test_funcs: List["FunctionInfo"],  # noqa: F821
 ) -> List[Dict[str, Any]]:
     """
     Look through all test functions and collect param sets for calls to func.
@@ -706,9 +751,7 @@ def _extract_test_param_sets_for_func(
     expected_test_name = f"test_{target_name}"
 
     matching_tests = [
-        tf
-        for tf in test_funcs
-        if tf.qualname.split(".")[-1] == expected_test_name
+        tf for tf in test_funcs if tf.qualname.split(".")[-1] == expected_test_name
     ]
 
     all_param_sets: List[Dict[str, Any]] = []
@@ -743,8 +786,8 @@ def _dedupe_param_sets(param_sets: List[Dict[str, Any]]) -> List[Dict[str, Any]]
 
 
 def suggest_params(
-    func: "FunctionInfo",
-    test_functions: Optional[List["FunctionInfo"]] = None,
+    func: "FunctionInfo",  # noqa: F821
+    test_functions: Optional[List["FunctionInfo"]] = None,  # noqa: F821
     *,
     literal_only: bool = False,
     coverage_data: Optional[Any] = None,
@@ -759,8 +802,8 @@ def suggest_params(
 
     test_functions should be the scanner results from the tests directory.
     """
-    required: List["ParameterInfo"] = []
-    optional: List["ParameterInfo"] = []
+    required: List["ParameterInfo"] = []  # noqa: F821
+    optional: List["ParameterInfo"] = []  # noqa: F821
     unused_parameters = set(getattr(func, "unused_parameters", None) or [])
 
     is_method = "." in func.qualname
@@ -847,7 +890,9 @@ def suggest_params(
     _record(minimal)
 
     for opt in optional:
-        usage_candidates = parameter_usage_values.get(opt.name) if parameter_usage_values else None
+        usage_candidates = (
+            parameter_usage_values.get(opt.name) if parameter_usage_values else None
+        )
         if usage_candidates:
             for candidate in usage_candidates:
                 call_kwargs = dict(minimal)
@@ -897,7 +942,9 @@ def suggest_params(
                 _record(call_kwargs)
 
     if not literal_only:
-        branch_calls = _build_branch_param_sets(func, minimal, coverage_data=coverage_data)
+        branch_calls = _build_branch_param_sets(
+            func, minimal, coverage_data=coverage_data
+        )
         for call_kwargs in branch_calls:
             param_sets.append(call_kwargs)
             _record(call_kwargs)
@@ -925,6 +972,8 @@ def suggest_params(
         param_sets=param_sets,
         scenario=scenario,
     )
+
+
 def _is_verbosity_param(name: str) -> bool:
     lname = name.lower()
     for token in VERBOSITY_PARAM_TOKENS:
@@ -936,7 +985,9 @@ def _is_verbosity_param(name: str) -> bool:
     return False
 
 
-def _verbosity_candidate_values(param: "ParameterInfo") -> Optional[List[Any]]:
+def _verbosity_candidate_values(
+    param: "ParameterInfo", # noqa: F821
+) -> Optional[List[Any]]:  
     if not _is_verbosity_param(param.name):
         return None
 
@@ -945,7 +996,9 @@ def _verbosity_candidate_values(param: "ParameterInfo") -> Optional[List[Any]]:
 
     if "bool" in ann or isinstance(default_value, bool):
         base = [False, True]
-    elif "int" in ann or (isinstance(default_value, int) and not isinstance(default_value, bool)):
+    elif "int" in ann or (
+        isinstance(default_value, int) and not isinstance(default_value, bool)
+    ):
         base = [0, 1, 2, 3]
     else:
         base = [False, True]
@@ -961,6 +1014,8 @@ def _verbosity_candidate_values(param: "ParameterInfo") -> Optional[List[Any]]:
         seen.add(value)
         ordered.append(value)
     return ordered
+
+
 def _history_path() -> Path:
     env = os.environ.get(_PARAM_HISTORY_ENV)
     if env:
@@ -981,7 +1036,9 @@ def _is_serializable_value(value: Any) -> bool:
     if isinstance(value, list):
         return all(_is_serializable_value(v) for v in value)
     if isinstance(value, dict):
-        return all(isinstance(k, str) and _is_serializable_value(v) for k, v in value.items())
+        return all(
+            isinstance(k, str) and _is_serializable_value(v) for k, v in value.items()
+        )
     return False
 
 
@@ -1033,7 +1090,16 @@ def _update_param_history(observed: Dict[str, List[Any]]) -> None:
         _save_param_history(history)
 
 
-_SAFE_STRING_LITERALS = {"max", "min", "all", "none", "auto", "default", "first", "last"}
+_SAFE_STRING_LITERALS = {
+    "max",
+    "min",
+    "all",
+    "none",
+    "auto",
+    "default",
+    "first",
+    "last",
+}
 
 
 def _is_truthy_env(value: Optional[str]) -> bool:
@@ -1086,7 +1152,9 @@ def _normalize_db_entry(entry: Any) -> Optional[Dict[str, Any]]:
     if isinstance(entry_type, str) and entry_type:
         normalized["type"] = entry_type
     literals: List[Any] = []
-    for value in entry.get("literals", []) if isinstance(entry.get("literals"), list) else []:
+    for value in (
+        entry.get("literals", []) if isinstance(entry.get("literals"), list) else []
+    ):
         sanitized = _sanitize_db_value(value)
         if sanitized is None:
             continue
@@ -1152,11 +1220,13 @@ def _save_param_db(entries: Dict[str, Dict[str, Any]]) -> bool:
         for key, value in sorted(entries.items())
         if value.get("literals")
     }
-    path.write_text(json.dumps(serializable, ensure_ascii=False, indent=2), encoding="utf-8")
+    path.write_text(
+        json.dumps(serializable, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
     return True
 
 
-def _infer_param_type(func: "FunctionInfo", name: str) -> Optional[str]:
+def _infer_param_type(func: "FunctionInfo", name: str) -> Optional[str]:  # noqa: F821
     for param in getattr(func, "parameters", []):
         if param.name != name:
             continue
@@ -1169,7 +1239,9 @@ def _infer_param_type(func: "FunctionInfo", name: str) -> Optional[str]:
     return None
 
 
-def _update_param_database(func: "FunctionInfo", observed: Dict[str, List[Any]]) -> None:
+def _update_param_database(
+    func: "FunctionInfo", observed: Dict[str, List[Any]] # noqa: F821
+) -> None:  
     if not observed:
         return
     local_entries = _read_param_file(_param_db_path())
@@ -1211,7 +1283,7 @@ class _BranchHint:
 
 
 def _build_branch_param_sets(
-    func: "FunctionInfo",
+    func: "FunctionInfo",  # noqa: F821
     base_kwargs: Dict[str, Any],
     coverage_data: Optional[Any] = None,
 ) -> List[Dict[str, Any]]:
@@ -1224,38 +1296,40 @@ def _build_branch_param_sets(
     param_map = {p.name: p for p in func.parameters}
     collector = _BranchHintCollector(param_names, root=node)
     collector.visit(node)
-    
+
     missed_branches = []
     if coverage_data and func.filepath:
         missed_branches = analyze_file_coverage(func.filepath, coverage_data)
-    
+
     branch_calls: List[Dict[str, Any]] = []
-    
+
     # Process coverage-based hints first if available
     if missed_branches:
         for missed in missed_branches:
             # Find hints that match the missed condition
             # This is a bit tricky because we need to map the AST condition back to parameters.
             # We can reuse _BranchHintCollector logic on the specific condition node.
-            condition_collector = _BranchHintCollector(param_names, root=missed['condition'])
+            condition_collector = _BranchHintCollector(
+                param_names, root=missed["condition"]
+            )
             # We need to visit the condition expression, not the whole function
-            condition_collector._analyze_expr(missed['condition'])
-            
+            condition_collector._analyze_expr(missed["condition"])
+
             for hint in condition_collector.hints:
                 # Filter hints to match the 'needed' outcome (True/False)
                 # If needed is True, we want values that make the condition True.
                 # If needed is False, we want values that make the condition False.
-                
+
                 # _branch_hint_candidate_values returns values for specific kinds (truthy, falsy, eq, etc.)
                 # We need to align the hint kind with the needed outcome.
-                
+
                 # If hint.kind is 'truthy' and needed is True -> use truthy values
                 # If hint.kind is 'truthy' and needed is False -> use falsy values (which are NOT returned by _branch_hint_candidate_values for 'truthy' kind directly?)
                 # Wait, _branch_hint_candidate_values returns [True, False] for truthy kind.
                 # So we just need to pick the right one.
-                
+
                 values = _branch_hint_candidate_values(hint, param_map)
-                
+
                 # Filter values based on 'needed'
                 targeted_values = []
                 for val in values:
@@ -1263,7 +1337,7 @@ def _build_branch_param_sets(
                     # But we can assume:
                     # - if needed=True, we want the "primary" value for the hint kind
                     # - if needed=False, we want the "alternative" value
-                    
+
                     # Actually, let's just add all of them. The goal is to cover the branch.
                     # If we missed the branch, it means we probably didn't have a test case that exercised it.
                     # So adding *both* truthy and falsy values for the condition is a good strategy.
@@ -1473,7 +1547,9 @@ def _hashable_value(value: Any) -> Any:
     return value
 
 
-def _branch_hint_candidate_values(hint: _BranchHint, param_map: Dict[str, Any]) -> List[Any]:
+def _branch_hint_candidate_values(
+    hint: _BranchHint, param_map: Dict[str, Any]
+) -> List[Any]:
     param_info = param_map.get(hint.param)
     is_bool = False
     truthy_value = "example"
@@ -1484,9 +1560,13 @@ def _branch_hint_candidate_values(hint: _BranchHint, param_map: Dict[str, Any]) 
         ann = (param_info.annotation or "").lower()
         default_value = getattr(param_info, "default_value", None)
 
-        if ann in {"bool", "builtins.bool", "typing.bool"} or \
-           name.startswith("is_") or name.startswith("has_") or name.endswith("_flag") or \
-           isinstance(default_value, bool):
+        if (
+            ann in {"bool", "builtins.bool", "typing.bool"}
+            or name.startswith("is_")
+            or name.startswith("has_")
+            or name.endswith("_flag")
+            or isinstance(default_value, bool)
+        ):
             is_bool = True
 
         if not is_bool:
@@ -1575,7 +1655,11 @@ def _branch_alt_value(value: Any) -> Optional[Any]:
     if isinstance(value, str):
         return value + "_alt"
     if isinstance(value, (list, tuple, set)):
-        return next(iter(value), None) if isinstance(value, set) else (value[0] if value else None)
+        return (
+            next(iter(value), None)
+            if isinstance(value, set)
+            else (value[0] if value else None)
+        )
     return None
 
 
@@ -1584,5 +1668,7 @@ def _generate_resource_identifier(resource: Optional[str]) -> str:
     prefix = prefix[:3] if prefix else "itm"
     if not prefix[0].isalpha():
         prefix = "a" + prefix[1:]
-    suffix = "".join(random.choice(string.ascii_lowercase + string.digits) for _ in range(6))
+    suffix = "".join(
+        random.choice(string.ascii_lowercase + string.digits) for _ in range(6)
+    )
     return f"{prefix}{suffix}"

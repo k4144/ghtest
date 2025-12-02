@@ -31,3 +31,10 @@ branch = true
 [tool.coverage.paths]
 source = ["src", "*/site-packages"]
 
+[dependency-groups]
+dev = [
+    "bandit>=1.9.2",
+    "black>=25.11.0",
+    "ruff>=0.14.7",
+]
+

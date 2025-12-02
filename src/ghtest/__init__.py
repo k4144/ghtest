@@ -6,8 +6,15 @@ from .create_tests_workflow import workflow as write_tests
 from .analyze_tests import print_test_summary
 
 
-__all__ = ['suggest', 'scan', 'make_test', 'write_module', 'write_tests', 'print_test_summary']
+__all__ = [
+    "suggest",
+    "scan",
+    "make_test",
+    "write_module",
+    "write_tests",
+    "print_test_summary",
+]
 
-del param_suggestor
-del scanner
-del tests_creator
+del param_suggestor  # noqa: F821
+del scanner  # noqa: F821
+del tests_creator  # noqa: F821

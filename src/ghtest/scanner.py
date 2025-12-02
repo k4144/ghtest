@@ -17,7 +17,7 @@ from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 @dataclass
 class ParameterInfo:
     name: str
-    kind: str          # "positional_only", "positional_or_keyword", "var_positional", "keyword_only", "var_keyword"
+    kind: str  # "positional_only", "positional_or_keyword", "var_positional", "keyword_only", "var_keyword"
     annotation: Optional[str]
     default: Optional[str]
     default_value: Optional[Any] = None
@@ -25,12 +25,12 @@ class ParameterInfo:
 
 @dataclass
 class FunctionInfo:
-    module: str               # e.g. "pkg.sub.module"
-    qualname: str             # e.g. "func", "Class.method", "Class.Inner.method"
-    filepath: str             # path to the .py file
-    lineno: int               # line number in source
+    module: str  # e.g. "pkg.sub.module"
+    qualname: str  # e.g. "func", "Class.method", "Class.Inner.method"
+    filepath: str  # path to the .py file
+    lineno: int  # line number in source
     parameters: List[ParameterInfo]
-    returns: Optional[str]    # return annotation as string, if any
+    returns: Optional[str]  # return annotation as string, if any
     docstring: Optional[str]
     module_globals: Dict[str, Any] = field(default_factory=dict)
     sample_calls: List[Dict[str, Any]] = field(default_factory=list)
@@ -113,8 +113,9 @@ def _is_dunder_main_guard(test: ast.expr) -> bool:
     def _is_main_literal(node: ast.AST) -> bool:
         return isinstance(node, ast.Constant) and node.value == "__main__"
 
-    return (_is_name(left) and _is_main_literal(right)) or \
-           (_is_name(right) and _is_main_literal(left))
+    return (_is_name(left) and _is_main_literal(right)) or (
+        _is_name(right) and _is_main_literal(left)
+    )
 
 
 class _MainBlockCallCollector(ast.NodeVisitor):
@@ -135,7 +136,9 @@ def _call_target_name(node: ast.AST) -> Optional[str]:
     return None
 
 
-def _detect_crud_role_and_resource(qualname: str) -> Tuple[Optional[str], Optional[str]]:
+def _detect_crud_role_and_resource(
+    qualname: str,
+) -> Tuple[Optional[str], Optional[str]]:
     name = qualname.split(".")[-1].lower()
     tokens = name.split("_")
     if not tokens:
@@ -167,7 +170,7 @@ def _detect_crud_role_and_resource(qualname: str) -> Tuple[Optional[str], Option
     skip_words = {"data", "info", "details", "item", "items"}
     resource_tokens = [tok for tok in resource_tokens if tok and tok not in skip_words]
     resource = "_".join(resource_tokens) if resource_tokens else None
-    
+
     if resource and resource.endswith("s") and not resource.endswith("ss"):
         resource = resource[:-1]
 
@@ -221,9 +224,7 @@ def _extract_sample_calls(
         return {}
 
     top_level_funcs = {
-        func.qualname: func
-        for func in functions
-        if "." not in func.qualname
+        func.qualname: func for func in functions if "." not in func.qualname
     }
     if not top_level_funcs:
         return {}
@@ -284,7 +285,9 @@ class _InModuleCallCollector(ast.NodeVisitor):
         return None
 
 
-def _build_function_lookup(functions: List[FunctionInfo]) -> Dict[str, List[FunctionInfo]]:
+def _build_function_lookup(
+    functions: List[FunctionInfo],
+) -> Dict[str, List[FunctionInfo]]:
     lookup: Dict[str, List[FunctionInfo]] = defaultdict(list)
     for func in functions:
         lookup[func.qualname].append(func)
@@ -318,7 +321,9 @@ def _extract_module_globals(tree: ast.Module) -> Dict[str, Any]:
     for idx, node in enumerate(body):
         if isinstance(node, (ast.Import, ast.ImportFrom)):
             last_import_idx = idx
-        elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)) and first_def_idx == len(body):
+        elif isinstance(
+            node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)
+        ) and first_def_idx == len(body):
             first_def_idx = idx
 
     start = last_import_idx + 1
@@ -389,7 +394,16 @@ class _ParamUsageVisitor(ast.NodeVisitor):
         if "bool" in annotation:
             return True
         lowered = name.lower()
-        bool_prefixes = ("is_", "has_", "should_", "enable_", "allow_", "use_", "can_", "needs_")
+        bool_prefixes = (
+            "is_",
+            "has_",
+            "should_",
+            "enable_",
+            "allow_",
+            "use_",
+            "can_",
+            "needs_",
+        )
         if lowered.endswith("_flag") or lowered.startswith(bool_prefixes):
             return True
         return False
@@ -401,7 +415,9 @@ class _ParamUsageVisitor(ast.NodeVisitor):
         default_value = getattr(info, "default_value", None) if info else None
         if not self._looks_boolean_param(name):
             # numeric parameters occasionally appear in truthy checks; give small ints if annotated
-            if isinstance(default_value, (int, float)) and not isinstance(default_value, bool):
+            if isinstance(default_value, (int, float)) and not isinstance(
+                default_value, bool
+            ):
                 self._record_value(name, 0)
                 self._record_value(name, 1)
             elif "int" in annotation or "float" in annotation:
@@ -409,7 +425,9 @@ class _ParamUsageVisitor(ast.NodeVisitor):
                 self._record_value(name, 1)
             return
 
-        if isinstance(default_value, (int, float)) and not isinstance(default_value, bool):
+        if isinstance(default_value, (int, float)) and not isinstance(
+            default_value, bool
+        ):
             self._record_value(name, 0)
             self._record_value(name, 1)
             return
@@ -446,7 +464,9 @@ class _ParamUsageVisitor(ast.NodeVisitor):
         literal = self._literal_eval(other)
         if literal is None and isinstance(other, (ast.List, ast.Tuple, ast.Set)):
             literal = self._literal_eval(other)
-        if isinstance(op, (ast.In, ast.NotIn)) and isinstance(literal, (list, tuple, set)):
+        if isinstance(op, (ast.In, ast.NotIn)) and isinstance(
+            literal, (list, tuple, set)
+        ):
             for item in literal:
                 self._record_value(name, item)
             return
@@ -517,7 +537,15 @@ class _ParamUsageVisitor(ast.NodeVisitor):
         if isinstance(base, ast.Name) and base.id in self.param_names:
             self.used_params.add(base.id)
             attr = node.attr
-            if attr in {"items", "keys", "values", "get", "update", "pop", "setdefault"}:
+            if attr in {
+                "items",
+                "keys",
+                "values",
+                "get",
+                "update",
+                "pop",
+                "setdefault",
+            }:
                 self._record_dict_hint(base.id)
             elif attr in {"append", "extend", "insert", "pop", "remove", "clear"}:
                 self._record_list_hint(base.id)
@@ -545,12 +573,10 @@ class _ParamUsageVisitor(ast.NodeVisitor):
             self.visit(stmt)
 
 
-def _collect_parameter_usage(func_def: ast.AST, params: List[ParameterInfo]) -> Tuple[Dict[str, List[Any]], Set[str]]:
-    param_map = {
-        p.name: p
-        for p in params
-        if p.name not in {"self", "cls"}
-    }
+def _collect_parameter_usage(
+    func_def: ast.AST, params: List[ParameterInfo]
+) -> Tuple[Dict[str, List[Any]], Set[str]]:
+    param_map = {p.name: p for p in params if p.name not in {"self", "cls"}}
     visitor = _ParamUsageVisitor(param_map)
     visitor.visit(func_def)
     usage_values = dict(visitor.literal_hints)
@@ -561,6 +587,7 @@ def _collect_parameter_usage(func_def: ast.AST, params: List[ParameterInfo]) -> 
         if p.name in param_map and p.default is not None and p.name not in used
     }
     return usage_values, optional_unused
+
 
 def _collect_module_param_values(
     functions: List[FunctionInfo],
@@ -708,7 +735,8 @@ def scan_python_functions(root: str) -> List[FunctionInfo]:
 
     for dirpath, dirnames, filenames in os.walk(root):
         dirnames[:] = [
-            d for d in dirnames
+            d
+            for d in dirnames
             if d not in ignored_dirs and not d.endswith("-checkpoint")
         ]
         for filename in filenames:
@@ -772,7 +800,9 @@ def scan_python_functions(root: str) -> List[FunctionInfo]:
                     docstring = ast.get_docstring(node)
 
                     crud_role, crud_resource = _detect_crud_role_and_resource(qualname)
-                    usage_values, unused_optional = _collect_parameter_usage(func_def, params)
+                    usage_values, unused_optional = _collect_parameter_usage(
+                        func_def, params
+                    )
 
                     results.append(
                         FunctionInfo(
@@ -808,12 +838,16 @@ def scan_python_functions(root: str) -> List[FunctionInfo]:
             module_functions = results[start_idx:]
             sample_call_map = _extract_sample_calls(tree, module_functions)
             internal_call_map = _extract_internal_call_map(tree, module_functions)
-            module_param_values = _collect_module_param_values(module_functions, sample_call_map, internal_call_map)
+            module_param_values = _collect_module_param_values(
+                module_functions, sample_call_map, internal_call_map
+            )
 
             for func in module_functions:
                 func.module_functions = module_functions
             for func in module_functions:
-                func.sample_calls = sample_call_map.get(func.qualname, []) if sample_call_map else []
+                func.sample_calls = (
+                    sample_call_map.get(func.qualname, []) if sample_call_map else []
+                )
                 func.module_param_values = module_param_values
                 func.module_call_values = internal_call_map.get(func.qualname, [])
 
@@ -821,9 +855,6 @@ def scan_python_functions(root: str) -> List[FunctionInfo]:
 
 
 # In[ ]:
-
-
-
 
 
 # In[ ]:

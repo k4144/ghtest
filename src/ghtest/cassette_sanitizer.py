@@ -119,7 +119,9 @@ def sanitize_file(path: Path, *, dry_run: bool = False) -> bool:
     return changed
 
 
-def sanitize_paths(targets: Iterable[Path], *, dry_run: bool = False) -> Tuple[int, int]:
+def sanitize_paths(
+    targets: Iterable[Path], *, dry_run: bool = False
+) -> Tuple[int, int]:
     total = 0
     changed = 0
     for path in targets:
@@ -173,7 +175,9 @@ def _sanitize_primitive(value: Any, parent_key: str | None) -> Tuple[Any, bool]:
         if parent_key in AUTH_LIKE_KEYS:
             masked = _mask_auth_value(value)
             return masked, masked != value
-        if parent_key in MASK_STRING_KEYS or _key_contains_sensitive_fragment(parent_key):
+        if parent_key in MASK_STRING_KEYS or _key_contains_sensitive_fragment(
+            parent_key
+        ):
             masked = _mask_string(value)
             return masked, masked != value
         if _looks_like_secret(value):
@@ -276,10 +280,14 @@ def _sanitize_http_body(body: Any) -> bool:
     return changed
 
 
-def main(argv: List[str] | None = None, vb:int=0) -> int:
+def main(argv: List[str] | None = None, vb: int = 0) -> int:
     parser = argparse.ArgumentParser(description="Sanitize VCR cassette files.")
-    parser.add_argument("paths", nargs="+", help="Cassette files or directories to sanitize.")
-    parser.add_argument("--dry-run", action="store_true", help="Report changes without writing files.")
+    parser.add_argument(
+        "paths", nargs="+", help="Cassette files or directories to sanitize."
+    )
+    parser.add_argument(
+        "--dry-run", action="store_true", help="Report changes without writing files."
+    )
     args = parser.parse_args(argv)
     targets = list(_iter_cassette_paths(args.paths))
     if not targets:

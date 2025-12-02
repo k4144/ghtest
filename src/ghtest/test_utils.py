@@ -60,7 +60,9 @@ def _import_module_from_path(path: str, module_name: Optional[str] = None):
     return module
 
 
-def import_function(module: str, filepath: Optional[str], qualname: str) -> Callable[..., Any]:
+def import_function(
+    module: str, filepath: Optional[str], qualname: str
+) -> Callable[..., Any]:
     try:
         mod = importlib.import_module(module)
     except Exception:
@@ -213,11 +215,15 @@ def _is_literal_value(value: Any) -> bool:
     if isinstance(value, (list, tuple)):
         return all(_is_literal_value(v) for v in value)
     if isinstance(value, dict):
-        return all(isinstance(k, str) and _is_literal_value(v) for k, v in value.items())
+        return all(
+            isinstance(k, str) and _is_literal_value(v) for k, v in value.items()
+        )
     return False
 
 
-def _summarize_return_value(value: Any, volatile_fields: Sequence[str]) -> Dict[str, Any]:
+def _summarize_return_value(
+    value: Any, volatile_fields: Sequence[str]
+) -> Dict[str, Any]:
     summary: Dict[str, Any] = {
         "type": _type_name(value),
         "repr": _stable_repr(value),
@@ -238,10 +244,14 @@ def _summarize_return_value(value: Any, volatile_fields: Sequence[str]) -> Dict[
     return summary
 
 
-def _collect_response_attributes(response: Any, volatile_fields: Sequence[str]) -> Dict[str, Dict[str, Any]]:
+def _collect_response_attributes(
+    response: Any, volatile_fields: Sequence[str]
+) -> Dict[str, Dict[str, Any]]:
     attributes: Dict[str, Dict[str, Any]] = {}
     volatile = set(volatile_fields or [])
-    candidate_names = {name for name in response.__dict__.keys() if not name.startswith("_")}
+    candidate_names = {
+        name for name in response.__dict__.keys() if not name.startswith("_")
+    }
     candidate_names.update(_RESPONSE_EXTRA_ATTRS)
     for name in sorted(candidate_names):
         if name in volatile:
@@ -287,7 +297,9 @@ def _summarize_attribute_value(value: Any) -> Dict[str, Any]:
         if sample:
             summary["sample"] = sample
         return summary
-    if isinstance(value, SequenceABC) and not isinstance(value, (str, bytes, bytearray)):
+    if isinstance(value, SequenceABC) and not isinstance(
+        value, (str, bytes, bytearray)
+    ):
         try:
             summary["length"] = len(value)
         except Exception:

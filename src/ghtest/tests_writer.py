@@ -6,13 +6,12 @@ from __future__ import annotations
 import os
 import pprint
 import textwrap
-import vcr
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Literal
+from typing import Any, List, Sequence, Tuple, Literal
 
-from .tests_creator import CrudScenario, ScenarioStep, SuggestedFunctionTests
-from .test_utils import CaseTestResult, RunTestWithCassette, assert_return_summary
+from .tests_creator import ScenarioStep, SuggestedFunctionTests
+from .test_utils import CaseTestResult, RunTestWithCassette
 
 
 @dataclass
@@ -31,6 +30,7 @@ class TestWriterResult:
 class ScenarioDefinition:
     suggestion: SuggestedFunctionTests
     cases: List[Tuple[ScenarioStep, CaseTestResult]]
+
 
 ExceptionAssertionMode = Literal["message", "type", "presence", "none"]
 _EXCEPTION_ASSERTION_MODES: Tuple[str, ...] = ("message", "type", "presence", "none")
@@ -158,7 +158,9 @@ def _cleanup_empty_data_dir(data_dir: Path) -> None:
 
 def _collect_cases(
     artifacts: Sequence[TestArtifact],
-) -> Tuple[List[Tuple[SuggestedFunctionTests, CaseTestResult, int]], List[ScenarioDefinition]]:
+) -> Tuple[
+    List[Tuple[SuggestedFunctionTests, CaseTestResult, int]], List[ScenarioDefinition]
+]:
     collected: List[Tuple[SuggestedFunctionTests, CaseTestResult, int]] = []
     scenarios: List[ScenarioDefinition] = []
 
@@ -178,7 +180,9 @@ def _collect_cases(
                 scenario_cases = candidate
                 run_cases = run_cases[:-scenario_case_count]
                 paired = list(zip(steps, scenario_cases))
-                scenarios.append(ScenarioDefinition(suggestion=suggestion, cases=paired))
+                scenarios.append(
+                    ScenarioDefinition(suggestion=suggestion, cases=paired)
+                )
 
         main_cases = [case for case in run_cases if case.target == suggestion.qualname]
         for idx, case in enumerate(main_cases):
@@ -199,10 +203,12 @@ def _render_test_function(
     func_name = _make_test_name(suggestion.qualname, case_idx)
     lines: List[str] = []
     lines.append(f"def {func_name}():")
-    
+
     filepath_code = _relativize_path_code(suggestion.filepath, out_dir)
-    lines.append(f"    func = import_function({suggestion.module!r}, {filepath_code}, {suggestion.qualname!r})")
-    
+    lines.append(
+        f"    func = import_function({suggestion.module!r}, {filepath_code}, {suggestion.qualname!r})"
+    )
+
     params_literal = _format_literal(case.params)
     lines.append(_format_assignment("params", params_literal))
     volatile_literal = _format_literal(case.volatile_return_fields)
@@ -211,7 +217,9 @@ def _render_test_function(
     if cassette_path:
         cassette_path_code = _relativize_path_code(cassette_path, out_dir)
         lines.append(f"    cassette_path = {cassette_path_code}")
-        lines.append("    vcr_recorder = vcr.VCR(serializer='yaml', match_on=['uri', 'method', 'body'], record_mode='none')")
+        lines.append(
+            "    vcr_recorder = vcr.VCR(serializer='yaml', match_on=['uri', 'method', 'body'], record_mode='none')"
+        )
         lines.append("    with vcr_recorder.use_cassette(cassette_path):")
         lines.append(
             "        result = call_with_capture(func, target={qual!r}, params=params, volatile_return_fields=volatile_fields)".format(
@@ -227,7 +235,9 @@ def _render_test_function(
 
     if case.exception is None:
         lines.append("    assert result.exception is None")
-        return_literal, is_repr = _literal_or_repr(case.return_value, data_store, f"{func_name}_return")
+        return_literal, is_repr = _literal_or_repr(
+            case.return_value, data_store, f"{func_name}_return"
+        )
         lines.append(_format_assignment("expected_return", return_literal))
         if is_repr:
             lines.append("    assert repr(result.return_value) == expected_return")
@@ -236,7 +246,9 @@ def _render_test_function(
     else:
         lines.extend(_exception_assertion_lines(case, exception_assertion))
 
-    printed_literal, printed_repr = _literal_or_repr(case.printed, data_store, f"{func_name}_stdout")
+    printed_literal, printed_repr = _literal_or_repr(
+        case.printed, data_store, f"{func_name}_stdout"
+    )
     lines.append(_format_assignment("expected_output", printed_literal))
     if printed_repr:
         lines.append("    assert repr(result.printed) == expected_output")
@@ -249,7 +261,9 @@ def _render_test_function(
     lines.append(_format_assignment("expected_writes", writes_literal))
     lines.append("    assert result.file_writes == expected_writes")
     if include_return_summary:
-        summary_literal = data_store.literal(case.return_summary, label=f"{func_name}_return_summary")
+        summary_literal = data_store.literal(
+            case.return_summary, label=f"{func_name}_return_summary"
+        )
         lines.append(_format_assignment("expected_return_summary", summary_literal))
         lines.append(
             f"    assert_return_summary(result.return_summary, expected_return_summary, target={suggestion.qualname!r})"
@@ -269,9 +283,13 @@ def _write_module(
     module_path = output_dir / f"{module_name}.py"
     header_lines = ["import vcr", "from pathlib import Path"]
     if include_return_summary:
-        header_lines.append("from ghtest.test_utils import assert_return_summary, call_with_capture, import_function")
+        header_lines.append(
+            "from ghtest.test_utils import assert_return_summary, call_with_capture, import_function"
+        )
     else:
-        header_lines.append("from ghtest.test_utils import call_with_capture, import_function")
+        header_lines.append(
+            "from ghtest.test_utils import call_with_capture, import_function"
+        )
     header = "\n".join(header_lines).rstrip() + "\n\n"
     if data_loader:
         header += "\n".join(_DATA_LOADER_TEMPLATE).rstrip() + "\n\n"
@@ -322,7 +340,10 @@ def _write_scenario_module(
     resource = None
     if scenario:
         resource = scenario.resource
-    safe_resource = "".join(ch if ch.isalnum() else "_" for ch in (resource or definition.suggestion.qualname))
+    safe_resource = "".join(
+        ch if ch.isalnum() else "_"
+        for ch in (resource or definition.suggestion.qualname)
+    )
     safe_resource = safe_resource.strip("_") or "scenario"
     module_name = f"test_scenario_{safe_resource}_{index}"
     module_path = scenario_dir / f"{module_name}.py"
@@ -330,7 +351,9 @@ def _write_scenario_module(
     if include_return_summary:
         header_import = "from ghtest.test_utils import assert_return_summary, call_with_capture, import_function"
     else:
-        header_import = "from ghtest.test_utils import call_with_capture, import_function"
+        header_import = (
+            "from ghtest.test_utils import call_with_capture, import_function"
+        )
     header = textwrap.dedent(
         f"""\
         import os
@@ -361,8 +384,7 @@ def _write_scenario_module(
     if needs_loader:
         # Scenarios are in a subdir, so data is one level up
         loader_code = "\n".join(_DATA_LOADER_TEMPLATE).replace(
-            "Path(__file__).with_name('data')",
-            "Path(__file__).parent.parent / 'data'"
+            "Path(__file__).with_name('data')", "Path(__file__).parent.parent / 'data'"
         )
         loader = loader_code.rstrip() + "\n\n"
     else:
@@ -394,7 +416,9 @@ def _render_scenario_function(
         comment = step.description or f"Step {idx + 1}: {step.qualname}"
         lines.append(f"    # {comment}")
         filepath_code = _relativize_path_code(step.filepath, out_dir)
-        lines.append(f"    func = import_function({step.module!r}, {filepath_code}, {step.qualname!r})")
+        lines.append(
+            f"    func = import_function({step.module!r}, {filepath_code}, {step.qualname!r})"
+        )
         params_literal = _format_literal(step.params)
         lines.append(_format_assignment("params", params_literal))
         volatile_literal = _format_literal(case.volatile_return_fields)
@@ -449,7 +473,9 @@ def _render_scenario_function(
         lines.append(_format_assignment("expected_writes", writes_literal))
         lines.append("    assert result.file_writes == expected_writes")
         if include_return_summary:
-            summary_literal = data_store.literal(case.return_summary, label=f"{func_name}_step_{idx}_return_summary")
+            summary_literal = data_store.literal(
+                case.return_summary, label=f"{func_name}_step_{idx}_return_summary"
+            )
             lines.append(_format_assignment("expected_return_summary", summary_literal))
             lines.append(
                 f"    assert_return_summary(result.return_summary, expected_return_summary, target={step.qualname!r})"
@@ -480,7 +506,9 @@ def _format_assignment(name: str, literal: str) -> str:
     return "\n".join(formatted)
 
 
-def _literal_or_repr(value: Any, data_store: _DataStore, label: str) -> Tuple[str, bool]:
+def _literal_or_repr(
+    value: Any, data_store: _DataStore, label: str
+) -> Tuple[str, bool]:
     if _is_literal_value(value):
         return data_store.literal(value, label=label), False
     return data_store.literal(repr(value), label=label), True
@@ -500,7 +528,9 @@ def _exception_assertion_lines(
 
     lines = [f"{indent}assert result.exception is not None"]
     if mode in ("message", "type"):
-        exc_type = f"{case.exception.__class__.__module__}.{case.exception.__class__.__name__}"
+        exc_type = (
+            f"{case.exception.__class__.__module__}.{case.exception.__class__.__name__}"
+        )
         lines.append(
             f"{indent}assert result.exception.__class__.__module__ + '.' + result.exception.__class__.__name__ == {exc_type!r}"
         )
@@ -518,7 +548,9 @@ def _is_literal_value(value: Any) -> bool:
     if isinstance(value, (list, tuple)):
         return all(_is_literal_value(v) for v in value)
     if isinstance(value, dict):
-        return all(isinstance(k, str) and _is_literal_value(v) for k, v in value.items())
+        return all(
+            isinstance(k, str) and _is_literal_value(v) for k, v in value.items()
+        )
     return False
 
 
@@ -543,12 +575,12 @@ def _relativize_path_code(path: str, base_dir: Path) -> str:
     try:
         abs_path = Path(path).resolve()
         if not abs_path.is_absolute():
-             return repr(path)
-        
+            return repr(path)
+
         rel_path = os.path.relpath(abs_path, base_dir)
         # Use forward slashes for consistency in generated code
         rel_path = rel_path.replace(os.sep, "/")
-        
+
         return f"str((Path(__file__).parent / {rel_path!r}).resolve())"
     except Exception:
         return repr(path)

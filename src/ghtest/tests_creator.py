@@ -19,7 +19,7 @@ try:  # pragma: no cover - fallback for direct script usage
         CaseTestResult,
         RunTestWithCassette,
         call_with_capture,
-        execute_function,
+        # execute_function,
         import_function,
     )
 except ImportError:  # pragma: no cover
@@ -30,7 +30,6 @@ except ImportError:  # pragma: no cover
         CaseTestResult,
         RunTestWithCassette,
         call_with_capture,
-        execute_function,
         import_function,
     )
 
@@ -63,7 +62,7 @@ class SuggestedFunctionTests:
     filepath: str
     qualname: str
     docstring: Optional[str]
-    param_sets: List[Dict[str, Any]]   # each dict is kwargs for a call
+    param_sets: List[Dict[str, Any]]  # each dict is kwargs for a call
     scenario: Optional[CrudScenario] = None
 
 
@@ -71,7 +70,7 @@ class SuggestedFunctionTests:
 class GeneratedTest:
     test_callable: Callable[[], RunTestWithCassette]
     cassette_path: str
-    source: str        # Python source code of an equivalent test function
+    source: str  # Python source code of an equivalent test function
 
 
 _DESTRUCTIVE_NAME_HINTS = (
@@ -192,7 +191,9 @@ def _function_body_has_destructive_calls(filepath: str, qualname: str) -> bool:
 def _should_confirm_execution(suggestion: SuggestedFunctionTests) -> bool:
     if _looks_destructive_name(suggestion.qualname):
         return True
-    return _function_body_has_destructive_calls(suggestion.filepath, suggestion.qualname)
+    return _function_body_has_destructive_calls(
+        suggestion.filepath, suggestion.qualname
+    )
 
 
 def _prompt_user_confirmation(suggestion: SuggestedFunctionTests) -> None:
@@ -293,7 +294,7 @@ def _run_crud_scenario(
     cassette_base: Optional[str] = None,
     record_mode: str = "once",
 ) -> List[CaseTestResult]:
-    assume_safe = os.environ.get('GHTEST_ASSUME_SAFE') == '1'
+    assume_safe = os.environ.get("GHTEST_ASSUME_SAFE") == "1"
     if assume_safe:
         confirmed = True
     else:
@@ -337,7 +338,7 @@ def _run_crud_scenario(
                     results.append(skipped_result)
                 break
     except BaseException as exc:  # noqa: BLE001
-        pending_error = exc
+        pending_error = exc  # noqa: F841
         # If we crashed outside the loop or during setup, we might need more padding,
         # but the break above handles the common case of step failure.
     finally:
@@ -363,24 +364,26 @@ def _run_crud_scenario(
 def make_test_function(
     suggestion: SuggestedFunctionTests,
     cassette_dir: str,
-    record_mode: str = 'once',
+    record_mode: str = "once",
     volatile_response_fields: Optional[Sequence[str]] = None,
 ) -> GeneratedTest:
     os.makedirs(cassette_dir, exist_ok=True)
 
     func_name = f"test_{suggestion.qualname.replace('.', '_')}"
-    requested_base = f'{suggestion.module}.{suggestion.qualname}'.replace(':', '_')
+    requested_base = f"{suggestion.module}.{suggestion.qualname}".replace(":", "_")
     cassette_base = _ensure_unique_cassette_base(cassette_dir, requested_base)
     if cassette_base != requested_base:
         print(
             f"Existing cassette detected for {requested_base}; "
             f"recording new interactions under {cassette_base}."
         )
-    cassette_path = os.path.join(cassette_dir, f'{cassette_base}.yaml')
+    cassette_path = os.path.join(cassette_dir, f"{cassette_base}.yaml")
     scenario_cassette_base: Optional[str] = None
     if suggestion.scenario:
         requested_scenario_base = f"{cassette_base}.scenario"
-        scenario_cassette_base = _ensure_unique_cassette_base(cassette_dir, requested_scenario_base)
+        scenario_cassette_base = _ensure_unique_cassette_base(
+            cassette_dir, requested_scenario_base
+        )
 
     if volatile_response_fields is None:
         volatile_fields: Optional[List[str]] = None
@@ -389,21 +392,25 @@ def make_test_function(
 
     def test(interactive=True) -> RunTestWithCassette:
         if _should_confirm_execution(suggestion):
-            if not os.environ.get('GHTEST_ASSUME_SAFE') == '1':
+            if not os.environ.get("GHTEST_ASSUME_SAFE") == "1":
                 if interactive:
                     _prompt_user_confirmation(suggestion)
                 else:
-                    raise RuntimeError('aborted executing potentially destructive test target.')
-        func = import_function(suggestion.module, suggestion.filepath, suggestion.qualname)
+                    raise RuntimeError(
+                        "aborted executing potentially destructive test target."
+                    )
+        func = import_function(
+            suggestion.module, suggestion.filepath, suggestion.qualname
+        )
         results: List[CaseTestResult] = []
 
         for idx, params in enumerate(suggestion.param_sets):
             case_cassette = f"{cassette_base}.case_{idx}.yaml"
             recorder = vcr.VCR(
-                serializer='yaml',
+                serializer="yaml",
                 cassette_library_dir=cassette_dir,
                 record_mode=record_mode,
-                match_on=['uri', 'method', 'body'],
+                match_on=["uri", "method", "body"],
             )
             try:
                 with recorder.use_cassette(case_cassette):
@@ -415,7 +422,9 @@ def make_test_function(
                     )
             except Exception as exc:  # noqa: BLE001
                 if _is_vcr_overwrite_error(exc):
-                     _reraise_with_vcr_guidance(exc, os.path.join(cassette_dir, case_cassette))
+                    _reraise_with_vcr_guidance(
+                        exc, os.path.join(cassette_dir, case_cassette)
+                    )
                 # Create a failed result
                 result = CaseTestResult(
                     target=suggestion.qualname,
@@ -449,13 +458,13 @@ def make_test_function(
 
     test.__name__ = func_name
     if suggestion.docstring:
-        test.__doc__ = f'Auto-generated test for {suggestion.qualname} with VCR.\n\n{suggestion.docstring}'
+        test.__doc__ = f"Auto-generated test for {suggestion.qualname} with VCR.\n\n{suggestion.docstring}"
 
     param_sets_repr = repr(suggestion.param_sets)
     volatile_repr = repr(volatile_fields)
 
     source = textwrap.dedent(
-        f'''import os
+        f"""import os
 from typing import List
 
 import vcr
@@ -497,7 +506,7 @@ def {func_name}() -> RunTestWithCassette:
         results.append(result)
 
     return RunTestWithCassette(cassette_path=os.path.join(cassette_dir, f"{cassette_base}.yaml"), cases=results)
-        '''
+        """
     )
 
     return GeneratedTest(
@@ -552,10 +561,10 @@ def _is_vcr_overwrite_error(exc: BaseException) -> bool:
 
 
 def _run_tests(gts, interactive=True, vb=0):
-    trs=[]
+    trs = []
     for gt in gts:
         try:
-            tr=gt.test_callable(interactive=interactive)
+            tr = gt.test_callable(interactive=interactive)
             trs.append(tr)
         except Exception as e:
             if vb:
