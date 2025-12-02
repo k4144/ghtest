@@ -17,18 +17,22 @@ def create_tests(
     history: bool = False,
     vb: int = 0,
 ) -> Tuple[Any, Any, Any, Any]:
-    """run test suite, return values from component functions
-    params:
-        cassette_dir:str,  folder with vcr cassettes
-        test_dir:str, folder with test modules
-        src_dir:str, folder with src under test
-        clean_up:bool, remove existing cassettes and tests
-        unsafe:bool, run potentially destructive functions without requesting permission
-        history:bool, disregard parameter suggestions from history
-        vb:int, verbosity
-    returns:
-        scs, sps, gts, trs (scans, suggested params, generated tests, test results)
-    side effects:
+    """
+    Run test suite, return values from component functions.
+
+    Args:
+        cassette_dir (str): folder with vcr cassettes
+        test_dir (str): folder with test modules
+        src_dir (str): folder with src under test
+        clean_up (bool): remove existing cassettes and tests
+        unsafe (bool): run potentially destructive functions without requesting permission
+        history (bool): disregard parameter suggestions from history
+        vb (int): verbosity
+
+    Returns:
+        tuple: (scs, sps, gts, trs) (scans, suggested params, generated tests, test results)
+
+    Side Effects:
         deletes cassette_dir, test_dir
         writes cassette_dir, test_dir
         executes functions in src, potentially including destructive functions

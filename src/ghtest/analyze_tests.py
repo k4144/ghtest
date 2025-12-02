@@ -396,17 +396,22 @@ def print_test_summary(
     refresh=False,
     vb=0,
 ):
-    """print tests statistics like tested functions, request retur codes etc
-    params:
-        cassette_dir: str, folder with vcr cassettes
-        test_dir:str, folder with tests
-        scr_dir:str, folder with source under test
-        data_dir:str, data folder within tests to ignore
-        refresh: bool=False, create tests before showing detailed stats, else try to load from disk
-        vb: int=0, detail level
-    returns:
-         None
-    side effects:
+    """
+    Print tests statistics like tested functions, request return codes etc.
+
+    Args:
+        cassette_dir (str): folder with vcr cassettes
+        test_dir (str): folder with tests
+        src_dir (str): folder with source under test
+        data_dir (str): data folder within tests to ignore
+        test_objects_dir (str): folder with test objects
+        refresh (bool): create tests before showing detailed stats, else try to load from disk
+        vb (int): detail level
+
+    Returns:
+        None
+
+    Side Effects:
         prints to stdout
     """
 
