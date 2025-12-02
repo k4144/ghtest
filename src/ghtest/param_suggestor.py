@@ -448,8 +448,8 @@ def _build_minimal_kwargs(
 
 
 def _apply_resource_identifier(
-    kwargs: Dict[str, Any], func: "FunctionInfo", identifier: str # noqa: F821
-) -> None:  
+    kwargs: Dict[str, Any], func: "FunctionInfo", identifier: str  # noqa: F821
+) -> None:
     candidate_names = {"name", "slug", "repo", "item", "resource", "id"}
     resource_lower = (func.crud_resource or "").lower()
     for p in func.parameters:
@@ -513,8 +513,8 @@ def _build_crud_scenario(
     identifier = _generate_resource_identifier(resource)
 
     def build_kwargs(
-        target: "FunctionInfo", overrides: Optional[Dict[str, Any]] = None # noqa: F821
-    ) -> Dict[str, Any]:  
+        target: "FunctionInfo", overrides: Optional[Dict[str, Any]] = None  # noqa: F821
+    ) -> Dict[str, Any]:
         target_globals = getattr(target, "module_globals", None) or module_globals
         target_module_params = (
             getattr(target, "module_param_values", None) or module_param_values
@@ -986,8 +986,8 @@ def _is_verbosity_param(name: str) -> bool:
 
 
 def _verbosity_candidate_values(
-    param: "ParameterInfo", # noqa: F821
-) -> Optional[List[Any]]:  
+    param: "ParameterInfo",  # noqa: F821
+) -> Optional[List[Any]]:
     if not _is_verbosity_param(param.name):
         return None
 
@@ -1240,8 +1240,8 @@ def _infer_param_type(func: "FunctionInfo", name: str) -> Optional[str]:  # noqa
 
 
 def _update_param_database(
-    func: "FunctionInfo", observed: Dict[str, List[Any]] # noqa: F821
-) -> None:  
+    func: "FunctionInfo", observed: Dict[str, List[Any]]  # noqa: F821
+) -> None:
     if not observed:
         return
     local_entries = _read_param_file(_param_db_path())
