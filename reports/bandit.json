@@ -1,19 +1,19 @@
 {
   "errors": [],
-  "generated_at": "2025-12-02T11:28:26Z",
+  "generated_at": "2025-12-02T12:23:41Z",
   "metrics": {
     "_totals": {
-      "CONFIDENCE.HIGH": 14,
+      "CONFIDENCE.HIGH": 13,
       "CONFIDENCE.LOW": 0,
       "CONFIDENCE.MEDIUM": 1,
       "CONFIDENCE.UNDEFINED": 0,
       "SEVERITY.HIGH": 0,
       "SEVERITY.LOW": 14,
-      "SEVERITY.MEDIUM": 1,
+      "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
       "loc": 4457,
       "nosec": 0,
-      "skipped_tests": 0
+      "skipped_tests": 1
     },
     "src/ghtest/__init__.py": {
       "CONFIDENCE.HIGH": 0,
@@ -29,17 +29,17 @@
       "skipped_tests": 0
     },
     "src/ghtest/analyze_tests.py": {
-      "CONFIDENCE.HIGH": 2,
+      "CONFIDENCE.HIGH": 1,
       "CONFIDENCE.LOW": 0,
       "CONFIDENCE.MEDIUM": 0,
       "CONFIDENCE.UNDEFINED": 0,
       "SEVERITY.HIGH": 0,
       "SEVERITY.LOW": 1,
-      "SEVERITY.MEDIUM": 1,
+      "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
       "loc": 296,
       "nosec": 0,
-      "skipped_tests": 0
+      "skipped_tests": 1
     },
     "src/ghtest/cassette_sanitizer.py": {
       "CONFIDENCE.HIGH": 0,
@@ -191,26 +191,6 @@
       ],
       "more_info": "https://bandit.readthedocs.io/en/1.9.2/blacklists/blacklist_imports.html#b403-import-pickle",
       "test_id": "B403",
-      "test_name": "blacklist"
-    },
-    {
-      "code": "312         with open(path, \"rb\") as f:\n313             ret.append(dill.load(f))\n314     if not ret:\n",
-      "col_offset": 23,
-      "end_col_offset": 35,
-      "filename": "src/ghtest/analyze_tests.py",
-      "issue_confidence": "HIGH",
-      "issue_cwe": {
-        "id": 502,
-        "link": "https://cwe.mitre.org/data/definitions/502.html"
-      },
-      "issue_severity": "MEDIUM",
-      "issue_text": "Pickle and modules that wrap it can be unsafe when used to deserialize untrusted data, possible security issue.",
-      "line_number": 313,
-      "line_range": [
-        313
-      ],
-      "more_info": "https://bandit.readthedocs.io/en/1.9.2/blacklists/blacklist_calls.html#b301-pickle",
-      "test_id": "B301",
       "test_name": "blacklist"
     },
     {
