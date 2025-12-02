@@ -44,3 +44,5 @@ dev = [
     "sphinx-rtd-theme>=0.5.1",
 ]
 
+[tool.bandit]
+exclude_dirs = ["tests", ".ipynb_checkpoints", "src/ghtest/.ipynb_checkpoints"]

@@ -4,11 +4,11 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ghtest.analyze_tests &#8212; ghtest  documentation</title>
+    <title>ghtest.analyze_tests &#8212; ghtest 0.1.0 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=5ecbeea2" />
     <link rel="stylesheet" type="text/css" href="../../_static/basic.css?v=b08954a9" />
     <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=27fed22d" />
-    <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../_static/documentation_options.js?v=01f34227"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
@@ -189,7 +189,7 @@
 
 
 <div class="viewcode-block" id="get_codes">
-<a class="viewcode-back" href="../../ghtest.html#ghtest.analyze_tests.get_codes">[docs]</a>
+<a class="viewcode-back" href="../../ghtest.analyze_tests.html#ghtest.get_codes">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_codes</span><span class="p">(</span><span class="n">cassette_dir</span><span class="p">,</span> <span class="n">src_dir</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;list requests return codes found in cassette_dir cassettes&quot;&quot;&quot;</span>
     <span class="n">modules</span> <span class="o">=</span> <span class="n">modules</span> <span class="o">=</span> <span class="n">_get_modules</span><span class="p">(</span><span class="n">src_dir</span><span class="p">)</span>
@@ -360,7 +360,7 @@
 
 <span class="c1"># scanner</span>
 <div class="viewcode-block" id="print_scan">
-<a class="viewcode-back" href="../../ghtest.html#ghtest.analyze_tests.print_scan">[docs]</a>
+<a class="viewcode-back" href="../../ghtest.analyze_tests.html#ghtest.print_scan">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">print_scan</span><span class="p">(</span><span class="n">scs</span><span class="p">):</span>
     <span class="k">for</span> <span class="n">sc</span> <span class="ow">in</span> <span class="n">scs</span><span class="p">:</span>
         <span class="n">_m</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">ps</span> <span class="o">=</span> <span class="n">sc</span><span class="o">.</span><span class="n">module</span><span class="p">,</span> <span class="n">sc</span><span class="o">.</span><span class="n">qualname</span><span class="p">,</span> <span class="n">sc</span><span class="o">.</span><span class="n">parameters</span>
@@ -375,7 +375,7 @@
 
 
 <div class="viewcode-block" id="print_suggestion">
-<a class="viewcode-back" href="../../ghtest.html#ghtest.analyze_tests.print_suggestion">[docs]</a>
+<a class="viewcode-back" href="../../ghtest.analyze_tests.html#ghtest.print_suggestion">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">print_suggestion</span><span class="p">(</span><span class="n">sps</span><span class="p">):</span>
     <span class="k">for</span> <span class="n">sc</span> <span class="ow">in</span> <span class="n">sps</span><span class="p">:</span>
         <span class="n">_m</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">ps</span> <span class="o">=</span> <span class="n">sc</span><span class="o">.</span><span class="n">module</span><span class="p">,</span> <span class="n">sc</span><span class="o">.</span><span class="n">qualname</span><span class="p">,</span> <span class="n">sc</span><span class="o">.</span><span class="n">param_sets</span>
@@ -397,7 +397,7 @@
 
 
 <div class="viewcode-block" id="print_tests">
-<a class="viewcode-back" href="../../ghtest.html#ghtest.analyze_tests.print_tests">[docs]</a>
+<a class="viewcode-back" href="../../ghtest.analyze_tests.html#ghtest.print_tests">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">print_tests</span><span class="p">(</span><span class="n">trs</span><span class="p">):</span>
     <span class="k">for</span> <span class="n">tr</span> <span class="ow">in</span> <span class="n">trs</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">tr</span><span class="p">:</span>
@@ -433,7 +433,7 @@
 
 
 <div class="viewcode-block" id="print_test_summary">
-<a class="viewcode-back" href="../../ghtest.html#ghtest.analyze_tests.print_test_summary">[docs]</a>
+<a class="viewcode-back" href="../../ghtest.analyze_tests.html#ghtest.print_test_summary">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">print_test_summary</span><span class="p">(</span>
     <span class="n">cassette_dir</span><span class="o">=</span><span class="s2">&quot;testdata_tests/cassettes&quot;</span><span class="p">,</span>
     <span class="n">test_dir</span><span class="o">=</span><span class="s2">&quot;testdata_tests&quot;</span><span class="p">,</span>
