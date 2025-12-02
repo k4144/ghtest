@@ -310,7 +310,7 @@ def _load_test_data(test_objects_dir="testdata_test_objects", vb=0):
                 print(f"{path} not found")  # noqa: E701
             continue
         with open(path, "rb") as f:
-            ret.append(dill.load(f)) # nosec: B301
+            ret.append(dill.load(f))  # nosec: B301
     if not ret:
         return None, None, None, None
     scs, sps, gts, trs = ret
