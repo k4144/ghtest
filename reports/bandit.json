@@ -1,6 +1,6 @@
 {
   "errors": [],
-  "generated_at": "2025-12-01T18:28:45Z",
+  "generated_at": "2025-12-02T08:20:16Z",
   "metrics": {
     "_totals": {
       "CONFIDENCE.HIGH": 14,
@@ -11,7 +11,7 @@
       "SEVERITY.LOW": 14,
       "SEVERITY.MEDIUM": 1,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 4151,
+      "loc": 4452,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -24,7 +24,7 @@
       "SEVERITY.LOW": 0,
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 10,
+      "loc": 17,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -37,7 +37,7 @@
       "SEVERITY.LOW": 1,
       "SEVERITY.MEDIUM": 1,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 271,
+      "loc": 294,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -50,7 +50,7 @@
       "SEVERITY.LOW": 0,
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 254,
+      "loc": 262,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -63,7 +63,7 @@
       "SEVERITY.LOW": 0,
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 44,
+      "loc": 75,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -76,7 +76,7 @@
       "SEVERITY.LOW": 1,
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 117,
+      "loc": 150,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -89,7 +89,7 @@
       "SEVERITY.LOW": 0,
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 71,
+      "loc": 66,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -102,7 +102,7 @@
       "SEVERITY.LOW": 2,
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 125,
+      "loc": 164,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -115,7 +115,7 @@
       "SEVERITY.LOW": 3,
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 1309,
+      "loc": 1390,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -128,7 +128,7 @@
       "SEVERITY.LOW": 3,
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 667,
+      "loc": 700,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -141,7 +141,7 @@
       "SEVERITY.LOW": 3,
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 329,
+      "loc": 341,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -154,7 +154,7 @@
       "SEVERITY.LOW": 1,
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 471,
+      "loc": 479,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -167,14 +167,14 @@
       "SEVERITY.LOW": 0,
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 483,
+      "loc": 514,
       "nosec": 0,
       "skipped_tests": 0
     }
   },
   "results": [
     {
-      "code": "300 def _load_test_data(test_objects_dir='testdata_test_objects', vb=0):\n301     import dill\n302     import os\n",
+      "code": "300 def _load_test_data(test_objects_dir=\"testdata_test_objects\", vb=0):\n301     import dill\n302     import os\n",
       "col_offset": 4,
       "end_col_offset": 15,
       "filename": "src/ghtest/analyze_tests.py",
@@ -194,7 +194,7 @@
       "test_name": "blacklist"
     },
     {
-      "code": "310         with open(path, 'rb')as f:\n311             ret.append(dill.load(f))\n312     if not ret:\n",
+      "code": "312         with open(path, \"rb\") as f:\n313             ret.append(dill.load(f))\n314     if not ret:\n",
       "col_offset": 23,
       "end_col_offset": 35,
       "filename": "src/ghtest/analyze_tests.py",
@@ -205,16 +205,16 @@
       },
       "issue_severity": "MEDIUM",
       "issue_text": "Pickle and modules that wrap it can be unsafe when used to deserialize untrusted data, possible security issue.",
-      "line_number": 311,
+      "line_number": 313,
       "line_range": [
-        311
+        313
       ],
       "more_info": "https://bandit.readthedocs.io/en/1.9.2/blacklists/blacklist_calls.html#b301-pickle",
       "test_id": "B301",
       "test_name": "blacklist"
     },
     {
-      "code": "98                     gts_cov.append(gt)\n99                 except Exception:\n100                     pass\n101 \n",
+      "code": "118                     gts_cov.append(gt)\n119                 except Exception:\n120                     pass\n121 \n",
       "col_offset": 16,
       "end_col_offset": 24,
       "filename": "src/ghtest/core.py",
@@ -225,10 +225,10 @@
       },
       "issue_severity": "LOW",
       "issue_text": "Try, Except, Pass detected.",
-      "line_number": 99,
+      "line_number": 119,
       "line_range": [
-        99,
-        100
+        119,
+        120
       ],
       "more_info": "https://bandit.readthedocs.io/en/1.9.2/plugins/b110_try_except_pass.html",
       "test_id": "B110",
@@ -255,7 +255,7 @@
       "test_name": "blacklist"
     },
     {
-      "code": "115                     gts_cov.append(gt)\n116                 except Exception:\n117                     pass\n118 \n",
+      "code": "135                     gts_cov.append(gt)\n136                 except Exception:\n137                     pass\n138 \n",
       "col_offset": 16,
       "end_col_offset": 24,
       "filename": "src/ghtest/create_tests_workflow.py",
@@ -266,17 +266,17 @@
       },
       "issue_severity": "LOW",
       "issue_text": "Try, Except, Pass detected.",
-      "line_number": 116,
+      "line_number": 136,
       "line_range": [
-        116,
-        117
+        136,
+        137
       ],
       "more_info": "https://bandit.readthedocs.io/en/1.9.2/plugins/b110_try_except_pass.html",
       "test_id": "B110",
       "test_name": "try_except_pass"
     },
     {
-      "code": "92                 value = ast.literal_eval(value_node)\n93             except Exception:\n94                 continue\n95 \n",
+      "code": "95                 value = ast.literal_eval(value_node)\n96             except Exception:\n97                 continue\n98 \n",
       "col_offset": 12,
       "end_col_offset": 24,
       "filename": "src/ghtest/param_suggestor.py",
@@ -287,17 +287,17 @@
       },
       "issue_severity": "LOW",
       "issue_text": "Try, Except, Continue detected.",
-      "line_number": 93,
+      "line_number": 96,
       "line_range": [
-        93,
-        94
+        96,
+        97
       ],
       "more_info": "https://bandit.readthedocs.io/en/1.9.2/plugins/b112_try_except_continue.html",
       "test_id": "B112",
       "test_name": "try_except_continue"
     },
     {
-      "code": "930     for token in VERBOSITY_PARAM_TOKENS:\n931         if token == \"vb\":\n932             if lname == \"vb\" or lname.startswith(\"vb_\") or lname.endswith(\"_vb\"):\n",
+      "code": "979     for token in VERBOSITY_PARAM_TOKENS:\n980         if token == \"vb\":\n981             if lname == \"vb\" or lname.startswith(\"vb_\") or lname.endswith(\"_vb\"):\n",
       "col_offset": 20,
       "end_col_offset": 24,
       "filename": "src/ghtest/param_suggestor.py",
@@ -308,18 +308,18 @@
       },
       "issue_severity": "LOW",
       "issue_text": "Possible hardcoded password: 'vb'",
-      "line_number": 931,
+      "line_number": 980,
       "line_range": [
-        931
+        980
       ],
       "more_info": "https://bandit.readthedocs.io/en/1.9.2/plugins/b105_hardcoded_password_string.html",
       "test_id": "B105",
       "test_name": "hardcoded_password_string"
     },
     {
-      "code": "1586         prefix = \"a\" + prefix[1:]\n1587     suffix = \"\".join(random.choice(string.ascii_lowercase + string.digits) for _ in range(6))\n1588     return f\"{prefix}{suffix}\"\n",
-      "col_offset": 21,
-      "end_col_offset": 74,
+      "code": "1671     suffix = \"\".join(\n1672         random.choice(string.ascii_lowercase + string.digits) for _ in range(6)\n1673     )\n",
+      "col_offset": 8,
+      "end_col_offset": 61,
       "filename": "src/ghtest/param_suggestor.py",
       "issue_confidence": "HIGH",
       "issue_cwe": {
@@ -328,9 +328,9 @@
       },
       "issue_severity": "LOW",
       "issue_text": "Standard pseudo-random generators are not suitable for security/cryptographic purposes.",
-      "line_number": 1587,
+      "line_number": 1672,
       "line_range": [
-        1587
+        1672
       ],
       "more_info": "https://bandit.readthedocs.io/en/1.9.2/blacklists/blacklist_calls.html#b311-random",
       "test_id": "B311",
@@ -379,7 +379,7 @@
       "test_name": "try_except_pass"
     },
     {
-      "code": "343             value = ast.literal_eval(value_node)\n344         except Exception:\n345             continue\n346 \n",
+      "code": "348             value = ast.literal_eval(value_node)\n349         except Exception:\n350             continue\n351 \n",
       "col_offset": 8,
       "end_col_offset": 20,
       "filename": "src/ghtest/scanner.py",
@@ -390,17 +390,17 @@
       },
       "issue_severity": "LOW",
       "issue_text": "Try, Except, Continue detected.",
-      "line_number": 344,
+      "line_number": 349,
       "line_range": [
-        344,
-        345
+        349,
+        350
       ],
       "more_info": "https://bandit.readthedocs.io/en/1.9.2/plugins/b112_try_except_continue.html",
       "test_id": "B112",
       "test_name": "try_except_continue"
     },
     {
-      "code": "255                 value = getattr(response, name)\n256         except Exception:\n257             continue\n258         if callable(value):\n",
+      "code": "265                 value = getattr(response, name)\n266         except Exception:\n267             continue\n268         if callable(value):\n",
       "col_offset": 8,
       "end_col_offset": 20,
       "filename": "src/ghtest/test_utils.py",
@@ -411,17 +411,17 @@
       },
       "issue_severity": "LOW",
       "issue_text": "Try, Except, Continue detected.",
-      "line_number": 256,
+      "line_number": 266,
       "line_range": [
-        256,
-        257
+        266,
+        267
       ],
       "more_info": "https://bandit.readthedocs.io/en/1.9.2/plugins/b112_try_except_continue.html",
       "test_id": "B112",
       "test_name": "try_except_continue"
     },
     {
-      "code": "280             summary[\"length\"] = len(value)\n281         except Exception:\n282             pass\n283         sample: Dict[str, Any] = {}\n",
+      "code": "290             summary[\"length\"] = len(value)\n291         except Exception:\n292             pass\n293         sample: Dict[str, Any] = {}\n",
       "col_offset": 8,
       "end_col_offset": 16,
       "filename": "src/ghtest/test_utils.py",
@@ -432,17 +432,17 @@
       },
       "issue_severity": "LOW",
       "issue_text": "Try, Except, Pass detected.",
-      "line_number": 281,
+      "line_number": 291,
       "line_range": [
-        281,
-        282
+        291,
+        292
       ],
       "more_info": "https://bandit.readthedocs.io/en/1.9.2/plugins/b110_try_except_pass.html",
       "test_id": "B110",
       "test_name": "try_except_pass"
     },
     {
-      "code": "292             summary[\"length\"] = len(value)\n293         except Exception:\n294             pass\n295         preview: List[Any] = []\n",
+      "code": "304             summary[\"length\"] = len(value)\n305         except Exception:\n306             pass\n307         preview: List[Any] = []\n",
       "col_offset": 8,
       "end_col_offset": 16,
       "filename": "src/ghtest/test_utils.py",
@@ -453,17 +453,17 @@
       },
       "issue_severity": "LOW",
       "issue_text": "Try, Except, Pass detected.",
-      "line_number": 293,
+      "line_number": 305,
       "line_range": [
-        293,
-        294
+        305,
+        306
       ],
       "more_info": "https://bandit.readthedocs.io/en/1.9.2/plugins/b110_try_except_pass.html",
       "test_id": "B110",
       "test_name": "try_except_pass"
     },
     {
-      "code": "355                 )\n356             except Exception:\n357                 pass\n358     # if pending_error:\n",
+      "code": "356                 )\n357             except Exception:\n358                 pass\n359     # if pending_error:\n",
       "col_offset": 12,
       "end_col_offset": 20,
       "filename": "src/ghtest/tests_creator.py",
@@ -474,10 +474,10 @@
       },
       "issue_severity": "LOW",
       "issue_text": "Try, Except, Pass detected.",
-      "line_number": 356,
+      "line_number": 357,
       "line_range": [
-        356,
-        357
+        357,
+        358
       ],
       "more_info": "https://bandit.readthedocs.io/en/1.9.2/plugins/b110_try_except_pass.html",
       "test_id": "B110",

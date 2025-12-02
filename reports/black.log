@@ -1,15 +1,4 @@
-would reformat /home/runner/work/ghtest/ghtest/src/ghtest/__init__.py
-would reformat /home/runner/work/ghtest/ghtest/src/ghtest/cassette_sanitizer.py
-would reformat /home/runner/work/ghtest/ghtest/src/ghtest/analyze_tests.py
-would reformat /home/runner/work/ghtest/ghtest/src/ghtest/cli.py
-would reformat /home/runner/work/ghtest/ghtest/src/ghtest/coverage_analysis.py
-would reformat /home/runner/work/ghtest/ghtest/src/ghtest/core.py
-would reformat /home/runner/work/ghtest/ghtest/src/ghtest/create_tests_workflow.py
-would reformat /home/runner/work/ghtest/ghtest/src/ghtest/scanner.py
-would reformat /home/runner/work/ghtest/ghtest/src/ghtest/test_utils.py
 would reformat /home/runner/work/ghtest/ghtest/src/ghtest/param_suggestor.py
-would reformat /home/runner/work/ghtest/ghtest/src/ghtest/tests_creator.py
-would reformat /home/runner/work/ghtest/ghtest/src/ghtest/tests_writer.py
 
 Oh no! 💥 💔 💥
-12 files would be reformatted.
+1 file would be reformatted, 11 files would be left unchanged.
