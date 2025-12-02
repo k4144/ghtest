@@ -1,6 +1,6 @@
 {
   "errors": [],
-  "generated_at": "2025-12-02T11:01:38Z",
+  "generated_at": "2025-12-02T11:28:26Z",
   "metrics": {
     "_totals": {
       "CONFIDENCE.HIGH": 14,
@@ -11,7 +11,7 @@
       "SEVERITY.LOW": 14,
       "SEVERITY.MEDIUM": 1,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 4453,
+      "loc": 4457,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -37,7 +37,7 @@
       "SEVERITY.LOW": 1,
       "SEVERITY.MEDIUM": 1,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 294,
+      "loc": 296,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -76,7 +76,7 @@
       "SEVERITY.LOW": 1,
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 150,
+      "loc": 151,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -102,7 +102,7 @@
       "SEVERITY.LOW": 2,
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 164,
+      "loc": 165,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -214,7 +214,7 @@
       "test_name": "blacklist"
     },
     {
-      "code": "118                     gts_cov.append(gt)\n119                 except Exception:\n120                     pass\n121 \n",
+      "code": "122                     gts_cov.append(gt)\n123                 except Exception:\n124                     pass\n125 \n",
       "col_offset": 16,
       "end_col_offset": 24,
       "filename": "src/ghtest/core.py",
@@ -225,10 +225,10 @@
       },
       "issue_severity": "LOW",
       "issue_text": "Try, Except, Pass detected.",
-      "line_number": 119,
+      "line_number": 123,
       "line_range": [
-        119,
-        120
+        123,
+        124
       ],
       "more_info": "https://bandit.readthedocs.io/en/1.9.2/plugins/b110_try_except_pass.html",
       "test_id": "B110",
@@ -255,7 +255,7 @@
       "test_name": "blacklist"
     },
     {
-      "code": "135                     gts_cov.append(gt)\n136                 except Exception:\n137                     pass\n138 \n",
+      "code": "139                     gts_cov.append(gt)\n140                 except Exception:\n141                     pass\n142 \n",
       "col_offset": 16,
       "end_col_offset": 24,
       "filename": "src/ghtest/create_tests_workflow.py",
@@ -266,10 +266,10 @@
       },
       "issue_severity": "LOW",
       "issue_text": "Try, Except, Pass detected.",
-      "line_number": 136,
+      "line_number": 140,
       "line_range": [
-        136,
-        137
+        140,
+        141
       ],
       "more_info": "https://bandit.readthedocs.io/en/1.9.2/plugins/b110_try_except_pass.html",
       "test_id": "B110",
