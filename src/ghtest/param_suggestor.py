@@ -717,7 +717,7 @@ def _extract_param_sets_from_test_function(
                 param_index = start_index + i
                 if param_index >= len(params):
                     break
-                pname = params[params_index].name  # noqa: F821
+                pname = params[param_index].name  # noqa: F821
                 value = _safe_literal_eval(arg_node)
                 kwargs[pname] = value
 

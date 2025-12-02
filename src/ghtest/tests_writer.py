@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any, List, Sequence, Tuple, Literal
 
 from .tests_creator import ScenarioStep, SuggestedFunctionTests
-from .test_utils import CaseTestResult, RunTestWithCassette
+from .test_utils import CaseTestResult, RunTestWithCassette, _stable_repr
 
 
 @dataclass
@@ -506,12 +506,11 @@ def _format_assignment(name: str, literal: str) -> str:
     return "\n".join(formatted)
 
 
-def _literal_or_repr(
-    value: Any, data_store: _DataStore, label: str
-) -> Tuple[str, bool]:
-    if _is_literal_value(value):
-        return data_store.literal(value, label=label), False
-    return data_store.literal(repr(value), label=label), True
+def _literal_or_repr(value: Any, data_store: _DataStore, label: str) -> Tuple[str, bool]:
+    literal = data_store.literal(value, label=label)
+    if literal is not None:
+        return literal, False
+    return _stable_repr(value), True
 
 
 def _exception_assertion_lines(
