@@ -506,7 +506,9 @@ def _format_assignment(name: str, literal: str) -> str:
     return "\n".join(formatted)
 
 
-def _literal_or_repr(value: Any, data_store: _DataStore, label: str) -> Tuple[str, bool]:
+def _literal_or_repr(
+    value: Any, data_store: _DataStore, label: str
+) -> Tuple[str, bool]:
     literal = data_store.literal(value, label=label)
     if literal is not None:
         return literal, False

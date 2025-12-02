@@ -2,7 +2,7 @@
 
 **Coverage-Guided Test Generator for Python**
 
-`ghtest` is an advanced test generation tool that automatically creates regression tests for your Python code. It combines static analysis with coverage-guided feedback to generate high-quality tests that capture the current behavior of your application.
+`ghtest` is a test generation tool that automatically creates regression tests for your Python code. It combines static analysis with coverage-guided feedback to generate (hopefully) high-quality tests that capture the current behavior of your application.
 
 ## Key Features
 
@@ -11,7 +11,7 @@
 -   **Scenario Support**: Detects CRUD patterns and generates stateful scenario tests (e.g., create -> read -> delete).
 -   **Smart Parameter Suggestion**: Analyzes function signatures and type hints to suggest realistic test inputs.
 -   **Portable Tests**: Generates standalone `pytest` files with relative paths, ready to be committed to your repository.
--   **Safe Execution**: Includes an interactive mode to prevent accidental execution of destructive functions (like `delete_repo`) during test generation.
+-   **Safe Execution**: Includes an interactive mode to prevent accidental execution of destructive functions (like `delete_repo`) during test generation. Nevertheless, it is stringly recommended to run `ghtest` in a safe environment.
 
 ## Installation
 
