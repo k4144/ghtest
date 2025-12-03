@@ -1,12 +1,12 @@
 [![License](https://img.shields.io/github/license/k4144/ghtest)](https://github.com/k4144/ghtest/blob/main/LICENSE)
 [![CI](https://github.com/k4144/ghtest/actions/workflows/ci.yml/badge.svg)](https://github.com/k4144/ghtest/actions/workflows/ci.yml)
-[![PyPI](./badges/pypi.svg)](https://pypi.org/project/ghtest/)
-[![Tests](./badges/tests.svg)](https://docs.pytest.org/en/stable/)
-[![Coverage](./badges/coverage.svg)](https://docs.pytest.org/en/stable/)
-[![Bandit](./badges/bandit.svg)](https://bandit.readthedocs.io/en/latest/)
-[![Black](./badges/black.svg)](https://pypi.org/project/black/)
-[![Ruff](./badges/ruff.svg)](https://pypi.org/project/ruff/)
-[![Docs](./badges/docs.svg)](https://www.sphinx-doc.org/en/master/usage/quickstart.html)
+[![PyPI](https://raw.githubusercontent.com/k4144/ghtest/main/badges/pypi.svg)](https://pypi.org/project/ghtest/)
+[![Tests](https://raw.githubusercontent.com/k4144/ghtest/main/badges/tests.svg)](https://docs.pytest.org/en/stable/)
+[![Coverage](https://raw.githubusercontent.com/k4144/ghtest/main/badges/coverage.svg)](https://docs.pytest.org/en/stable/)
+[![Bandit](https://raw.githubusercontent.com/k4144/ghtest/main/badges/bandit.svg)](https://bandit.readthedocs.io/en/latest/)
+[![Black](https://raw.githubusercontent.com/k4144/ghtest/main/badges/black.svg)](https://pypi.org/project/black/)
+[![Ruff](https://raw.githubusercontent.com/k4144/ghtest/main/badges/ruff.svg)](https://pypi.org/project/ruff/)
+[![Docs](https://raw.githubusercontent.com/k4144/ghtest/main/badges/docs.svg)](https://www.sphinx-doc.org/en/master/usage/quickstart.html)
 
 # ghtest
 
