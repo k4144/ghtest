@@ -15,3 +15,24 @@ jobs:
       publish-on: "main"
     secrets:
       pypi-token: ${{ secrets.PYPI_TOKEN }}
+
+  publish:
+    needs: ci
+    if: needs.ci.outputs.should_publish == 'true'
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Download distribution artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.ci.outputs.dist_artifact }}
+          path: dist
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist/
+
