@@ -1,6 +1,5 @@
-[![License](https://img.shields.io/github/k4144/ghtest)](https://github.com/k4144/ghtest/blob/main/LICENSE)
-[![License]github/license/k4144/ghtest)](https://github.com/k4144/ghtest/blob/main/LICENSE)
-[![CI](https://github.com/k4144/ghtest/actions/workflows/project-ci.yml/badge.svg)](https://github.com/k4144/ghtest/actions/workflows/project-ci.yml)
+[![License](https://img.shields.io/github/license/k4144/ghtest)](https://github.com/k4144/ghtest/blob/main/LICENSE)
+[![CI](https://github.com/k4144/ghtest/actions/workflows/ci.yml/badge.svg)](https://github.com/k4144/ghtest/actions/workflows/ci.yml)
 [![Tests](./badges/tests.svg)](https://docs.pytest.org/en/stable/)
 [![Coverage](./badges/coverage.svg)](https://docs.pytest.org/en/stable/)
 [![Bandit](./badges/bandit.svg)](https://bandit.readthedocs.io/en/latest/)
