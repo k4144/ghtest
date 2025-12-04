@@ -7,6 +7,8 @@
 [![Black](https://raw.githubusercontent.com/k4144/ghtest/main/badges/black.svg)](https://pypi.org/project/black/)
 [![Ruff](https://raw.githubusercontent.com/k4144/ghtest/main/badges/ruff.svg)](https://pypi.org/project/ruff/)
 [![Docs](https://raw.githubusercontent.com/k4144/ghtest/main/badges/docs.svg)](https://www.sphinx-doc.org/en/master/usage/quickstart.html)
+![Status](https://img.shields.io/badge/status-beta-blue)
+![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen)
 
 # ghtest
 
