@@ -19,21 +19,21 @@ dependencies = [
 [project.scripts]
 ghtest = "ghtest.cli:main"
 
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-addopts = "--cov=ghtest --cov-report=term-missing --cov-branch"
-filterwarnings = [
-    "ignore:cannot collect test class 'TestArtifact':pytest.PytestCollectionWarning",
-    "ignore:cannot collect test class 'TestWriterResult':pytest.PytestCollectionWarning",
-]
+#[tool.pytest.ini_options]
+#testpaths = ["tests"]
+#addopts = "--cov=ghtest --cov-report=term-missing --cov-branch"
+#filterwarnings = [
+#    "ignore:cannot collect test class 'TestArtifact':pytest.PytestCollectionWarning",
+#    "ignore:cannot collect test class 'TestWriterResult':pytest.PytestCollectionWarning",
+#]
 
-[tool.coverage.run]
-source = ["src"]
-branch = true
-disable_warnings = ["module-not-imported"]
+#[tool.coverage.run]
+#source = ["src"]
+#branch = true
+#disable_warnings = ["module-not-imported"]
 
-[tool.coverage.paths]
-source = ["src", "*/site-packages"]
+#[tool.coverage.paths]
+#source = ["src", "*/site-packages"]
 
 [dependency-groups]
 dev = [
